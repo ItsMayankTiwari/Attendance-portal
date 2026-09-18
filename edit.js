@@ -9,7 +9,7 @@ document.getElementById('editAuthBtn').onclick = async () => {
   try {
     assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
   } catch (err) {
-    status.innerText = 'Fingerprint check cancelled or failed.';
+    status.innerText = 'Fingerprint check cancelled or failed.' + err.message;
     return;
   }
 
