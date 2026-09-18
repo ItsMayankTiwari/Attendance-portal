@@ -7,7 +7,9 @@ const origin = `https://${rpID}`;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
-    const { roll_number, response } = req.body;
+
+    let { roll_number, response } = req.body;
+    roll_number = roll_number.trim().toUpperCase();
 
     const { data: student } = await supabase.from('students').select('*').eq('roll_number', roll_number).single();
     if (!student || !student.current_challenge) {
