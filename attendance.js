@@ -33,16 +33,26 @@ document.getElementById('verifyIdentityBtn').onclick = async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ roll_number, response: assertion })
   });
-  const result = await verifyRes.json();
+
+  // Read the raw response first instead of blindly forcing JSON
+  const rawText = await verifyRes.text(); 
+  let result;
+  
+  try {
+    result = JSON.parse(rawText);
+  } catch (err) {
+    // If Vercel returns an HTML crash page, this catches it and prints the status code
+    status.innerText = `Server crashed (Status ${verifyRes.status}). Check Vercel logs.`;
+    console.error("Raw server response:", rawText);
+    return;
+  }
 
   if (verifyRes.ok) {
     authToken = result.token;
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('scannerSection').style.display = 'block';
-    
-    // In the next step, we will initialize html5-qrcode here
     console.log("Token acquired, ready to scan. Expires in 20s.", authToken);
   } else {
-    status.innerText = result.error;
+    status.innerText = result.error || 'Unknown error occurred.';
   }
 };
