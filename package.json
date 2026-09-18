@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/MayankMT1024/Attendance-portal#readme",
   "dependencies": {
+    "@simplewebauthn/server": "^14.0.2",
     "@supabase/supabase-js": "^2.112.3"
   }
 }
