@@ -6,10 +6,12 @@ const rpID = process.env.RP_ID;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
-    const { roll_number, name, device_id } = req.body;
+    let { roll_number, name, device_id } = req.body;
     if (!roll_number || !name || !device_id) {
         return res.status(400).json({ error: 'Missing roll_number, name, or device_id' });
     }
+
+    roll_number = roll_number.trim().toUpperCase();
 
     // device-level check: has this browser already registered someone?
     const { data: deviceMatch } = await supabase
