@@ -1,7 +1,18 @@
-<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-
-<input id="rollNumber" placeholder="Roll number" />
-<input id="studentName" placeholder="Full name" />
-<button id="registerBtn">Register & enroll fingerprint</button>
-<p id="regStatus"></p>
-<script src="register.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+</head>
+<body>
+  <div class="card">
+    <h1>Student Registration</h1>
+    <input id="rollNumber" placeholder="Roll Number (e.g., B22CS001)" />
+    <input id="studentName" placeholder="Full Name" />
+    <button id="registerBtn">Register & Enroll Fingerprint</button>
+    <p id="regStatus"></p>
+  </div>
+  <script src="register.js"></script>
+</body>
+</html>

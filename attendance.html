@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
 </head>
 <body>
-  <div id="authSection">
-    <input id="markRollNumber" placeholder="Enter Roll Number" />
-    <button id="verifyIdentityBtn">Verify Identity</button>
-    <p id="authStatus"></p>
-  </div>
+  <div class="card">
+    <h1>Mark Attendance</h1>
+    
+    <div id="authSection">
+      <input id="markRollNumber" placeholder="Enter Roll Number" />
+      <button id="verifyIdentityBtn">Verify Identity</button>
+      <p id="authStatus"></p>
+    </div>
 
-  <!-- QR Scanner will be injected here in the next step, initially hidden -->
-  <div id="scannerSection" style="display: none;">
-    <p>Authentication valid for 20 seconds. Scan QR code now!</p>
-    <div id="reader"></div>
+    <div id="scannerSection" style="display: none;">
+      <p>Authentication valid for 20 seconds. Scan QR code now!</p>
+      <div id="reader"></div>
+    </div>
   </div>
-
   <script src="attendance.js"></script>
 </body>
 </html>
