@@ -48,8 +48,20 @@ function setupRealtimeListener(currentSessionId) {
 
 async function refreshQR() {
   const res = await fetch(`/api/qr-token?session_id=${sessionId}`);
-  const data = await res.json();
+  
+  // Read raw text first to prevent silent JSON crashes
+  const rawText = await res.text();
+  let data;
   const status = document.getElementById('qrStatus');
+
+  try {
+    data = JSON.parse(rawText);
+  } catch (err) {
+    status.innerText = `Server crashed (Status ${res.status}). Check Vercel logs.`;
+    console.error("Raw response:", rawText);
+    clearInterval(pollTimer);
+    return;
+  }
   
   if (!res.ok) {
     status.innerText = data.error;
@@ -57,6 +69,7 @@ async function refreshQR() {
     return;
   }
   
+  status.innerText = ''; // clear errors
   QRCode.toCanvas(document.getElementById('qrCanvas'), data.payload, { width: 320 }, (err) => {
     if (err) console.error(err);
   });
