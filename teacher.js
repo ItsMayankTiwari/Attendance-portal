@@ -1,6 +1,6 @@
 // Initialize Supabase Client (Paste your actual URL and Anon Key here)
-const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://fdjbmnpqyzsxwwgavhnd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkamJtbnBxeXpzeHd3Z2F2aG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NzE4NDcsImV4cCI6MjEwMzA0Nzg0N30.VxyBjad4MtjgV8uWboBimvmWBkpku4GTKj41O7QxLYg';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let sessionId = null;
@@ -10,19 +10,30 @@ let scanCount = 0;
 
 document.getElementById('startBtn').onclick = async () => {
   const course_code = document.getElementById('courseCode').value.trim();
+  
   const res = await fetch('/api/start-session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ course_code })
   });
-  const data = await res.json();
+
+  // Prevent silent JSON crashes if the server returns a 500 error page
+  const rawText = await res.text();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (err) {
+    alert(`Server crashed starting session (Status ${res.status}). Check Vercel logs.`);
+    console.error("Raw response:", rawText);
+    return;
+  }
+
   if (!res.ok) { alert(data.error); return; }
 
   sessionId = data.session_id;
   document.getElementById('startSection').style.display = 'none';
   document.getElementById('qrSection').style.display = 'block';
   
-  // Reset and start UI elements
   scanCount = 0;
   document.getElementById('scanCount').innerText = scanCount;
   
