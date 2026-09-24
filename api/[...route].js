@@ -10,8 +10,10 @@ import registerVerify from '../lib/register-verify.js';
 import sessionAttendance from '../lib/session-attendance.js';
 import startSession from '../lib/start-session.js';
 import updateProfile from '../lib/update-profile.js';
+import teacherCourses from '../lib/teacher-courses.js';
 
 const routes = {
+  'teacher-courses': teacherCourses,
   'attendance-options': attendanceOptions,
   'attendance-verify': attendanceVerify,
   'edit-auth-options': editAuthOptions,

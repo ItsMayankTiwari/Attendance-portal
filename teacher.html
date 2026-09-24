@@ -1,43 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Portal - Attendance</title>
   <link rel="stylesheet" href="style.css">
-  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- 1. Swap to the bulletproof qrcode.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  
   <style>
     .qr-container { background: white; padding: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db; margin: 0 auto 20px auto; display: flex; justify-content: center; align-items: center; }
     .btn-danger { background-color: #ef4444; }
     .btn-danger:hover { background-color: #dc2626; }
+    .btn-secondary { background-color: #4b5563; }
+    .btn-secondary:hover { background-color: #374151; }
     .counter-badge { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 15px 0; padding: 10px; background: #e0e7ff; border-radius: var(--border-radius); }
+    .panel { text-align: left; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: var(--border-radius); padding: 15px; margin-bottom: 15px; }
+    .panel h3 { margin-bottom: 10px; font-size: 1.1rem; }
   </style>
 </head>
 <body>
-  <div class="card" style="max-width: 500px;">
-    <h1>Class Attendance QR</h1>
-    
-    <div id="startSection">
-      <input id="courseCode" placeholder="Course code (e.g., CS201)" />
-      <button id="startBtn">Start Session</button>
+  <div class="card" style="max-width: 550px;">
+    <h1>Instructor & TA Portal</h1>
+
+    <!-- 1. AUTH SCREEN -->
+    <div id="authSection">
+      <p style="margin-bottom: 15px;">Sign in using your authorized email address.</p>
+      <button id="googleLoginBtn">Sign In with Google</button>
+      <p id="authStatus"></p>
     </div>
-    
-    <div id="qrSection" style="display:none;">
-      <p style="margin-bottom: 15px; color: var(--text-main);">Project this code. It updates every 6 seconds.</p>
+
+    <!-- 2. DASHBOARD SCREEN -->
+    <div id="dashboardSection" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <span id="userBadge" style="font-size: 0.9rem; font-weight: bold; color: var(--primary-color);"></span>
+        <button id="logoutBtn" class="btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;">Logout</button>
+      </div>
+
+      <!-- Course Selection & Session Launcher -->
+      <div class="panel">
+        <h3>Launch Attendance Session</h3>
+        <select id="courseSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
+          <option value="">-- Select a Course --</option>
+        </select>
+        <button id="startBtn">Start Live Session</button>
+      </div>
+
+      <!-- Course & TA Management -->
+      <div class="panel">
+        <h3>Manage Courses & Staff</h3>
+        <input id="newCourseCode" placeholder="Course Code (e.g., CS201)" />
+        <input id="newCourseName" placeholder="Course Name" />
+        <button id="createCourseBtn">Create Course</button>
+
+        <hr style="margin: 15px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+        <select id="taCourseSelect" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
+          <option value="">-- Assign TA to Course --</option>
+        </select>
+        <input id="taEmail" placeholder="TA Email ID" />
+        <button id="addTaBtn" class="btn-secondary">Add TA to Course</button>
+      </div>
+    </div>
+
+    <!-- 3. LIVE QR & ATTENDANCE SCREEN -->
+    <div id="qrSection" style="display: none;">
+      <p style="margin-bottom: 10px; font-weight: 600;">Project this QR code. It updates every 6 seconds.</p>
       
       <div class="counter-badge">
-        Successful Scans: <span id="scanCount">0</span>
+        Present Attendees: <span id="scanCount">0</span>
       </div>
 
       <div class="qr-container">
-        <div id="qrBox"></div> 
+        <div id="qrBox"></div>
       </div>
       
-      <!-- New Live Dashboard UI -->
       <div id="attendanceList" style="margin-bottom: 20px; text-align: left; max-height: 180px; overflow-y: auto; background: white; padding: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
-         <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-main);">Live Roster</h3>
+         <h3 style="font-size: 1rem; margin-bottom: 10px;">Live Roster</h3>
          <ul id="scanList" style="list-style: none; padding: 0; font-size: 0.9rem; color: var(--text-muted);">
-            <li>No scans yet.</li>
+            <li>No scans recorded yet.</li>
          </ul>
       </div>
 
@@ -45,5 +85,7 @@
       <button id="endBtn" class="btn-danger">End Session</button>
     </div>
   </div>
+
   <script src="teacher.js"></script>
 </body>
+</html>
