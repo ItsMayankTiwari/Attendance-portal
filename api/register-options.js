@@ -29,9 +29,19 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: 'This roll number is already registered.' });
     }
 
-    const { data: student, error: insertError } = await supabase
-        .from('students').insert({ roll_number, name, device_id }).select().single();
-    if (insertError) return res.status(500).json({ error: insertError.message });
+    const existing = deviceMatch || rollMatch;
+    let student, dbError;
+    if (existing) {
+        ({ data: student, error: dbError } = await supabase
+            .from('students').update({ roll_number, name, device_id }).eq('id', existing.id).select().single());
+    } else {
+        ({ data: student, error: dbError } = await supabase
+            .from('students').insert({ roll_number, name, device_id }).select().single());
+    }
+    if (dbError) return res.status(500).json({ error: dbError.message });
+    // const { data: student, error: insertError } = await supabase
+    //     .from('students').insert({ roll_number, name, device_id }).select().single();
+    // if (insertError) return res.status(500).json({ error: insertError.message });
 
     const options = await generateRegistrationOptions({
         rpName: 'Class Attendance',

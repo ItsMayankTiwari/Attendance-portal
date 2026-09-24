@@ -5,6 +5,12 @@ document.getElementById('editAuthBtn').onclick = async () => {
     const optRes = await fetch('/api/edit-auth-options', { method: 'POST' });
     const options = await optRes.json();
 
+    const verifyRes = await fetch('/api/edit-auth-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: assertion, challenge: options.challenge })
+    });
+
     let assertion;
     try {
         assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
