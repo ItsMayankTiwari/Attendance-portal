@@ -2,15 +2,12 @@ let currentStudentId = null;
 
 document.getElementById('editAuthBtn').onclick = async () => {
     const status = document.getElementById('editStatus');
+    
+    // 1. Get options from server
     const optRes = await fetch('/api/edit-auth-options', { method: 'POST' });
     const options = await optRes.json();
 
-    const verifyRes = await fetch('/api/edit-auth-verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response: assertion, challenge: options.challenge })
-    });
-
+    // 2. Prompt fingerprint hardware
     let assertion;
     try {
         assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
@@ -19,11 +16,16 @@ document.getElementById('editAuthBtn').onclick = async () => {
         return;
     }
 
+    // 3. Send response AND challenge back to server
     const verifyRes = await fetch('/api/edit-auth-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response: assertion })
+        body: JSON.stringify({ 
+            response: assertion, 
+            challenge: options.challenge // Required by your updated backend
+        })
     });
+    
     const result = await verifyRes.json();
     if (!verifyRes.ok) { status.innerText = result.error; return; }
 

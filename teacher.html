@@ -4,18 +4,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <style>
+    /* Teacher-specific layout tweaks */
+    .qr-container {
+      background: white;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      border: 1px solid #d1d5db;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #qrCanvas {
+      width: 100% !important;
+      max-width: 320px;
+      height: auto !important;
+    }
+    .btn-danger {
+      background-color: #ef4444; /* Red for destructive action */
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+  </style>
 </head>
 <body>
   <div class="card" style="max-width: 500px;">
     <h1>Class Attendance QR</h1>
+    
     <div id="startSection">
-      <input id="courseCode" placeholder="Course code (optional)" />
+      <input id="courseCode" placeholder="Course code (e.g., CS201)" />
       <button id="startBtn">Start Session</button>
     </div>
+    
     <div id="qrSection" style="display:none;">
-      <canvas id="qrCanvas"></canvas>
+      <p style="margin-bottom: 15px; color: var(--text-main);">Project this code. It updates every 6 seconds.</p>
+      
+      <div class="qr-container">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      
       <p id="qrStatus"></p>
-      <button id="endBtn">End Session</button>
+      <button id="endBtn" class="btn-danger">End Session</button>
     </div>
   </div>
   <script src="teacher.js"></script>
