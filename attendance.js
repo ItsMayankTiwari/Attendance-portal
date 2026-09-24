@@ -1,107 +1,188 @@
-let authToken = null; // Stores the 20-second JWT
+const SUPABASE_URL = 'https://fdjbmnpqyzsxwwgavhnd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkamJtbnBxeXpzeHd3Z2F2aG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NzE4NDcsImV4cCI6MjEwMzA0Nzg0N30.VxyBjad4MtjgV8uWboBimvmWBkpku4GTKj41O7QxLYg'; //[cite: 1]
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-document.getElementById('verifyIdentityBtn').onclick = async () => {
-  const roll_number = document.getElementById('markRollNumber').value.trim();
-  const status = document.getElementById('authStatus');
-  if (!roll_number) { status.innerText = 'Enter your roll number.'; return; }
+let currentSession = null;
+let html5QrCode = null;
 
-  status.innerText = 'Requesting challenge...';
+async function init() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  currentSession = session;
+  
+  supabaseClient.auth.onAuthStateChange((_event, newSession) => {
+    currentSession = newSession;
+    if (!newSession) location.reload();
+  });
 
-  // 1. Get challenge
-  const optRes = await fetch('/api/attendance-options', {
+  if (session) {
+    document.getElementById('authSection').style.display = 'none';
+    loadDashboard();
+  }
+}
+
+document.getElementById('googleLoginBtn').onclick = async () => {
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) document.getElementById('authStatus').innerText = error.message;
+};
+
+async function loadDashboard() {
+  const res = await fetch('/api/student-data', {
+    headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+  });
+  const data = await res.json();
+  
+  if (!data.student.is_registered) {
+    document.getElementById('setupSection').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('setupSection').style.display = 'none';
+  document.getElementById('dashboardSection').style.display = 'block';
+  
+  document.getElementById('studentName').innerText = data.student.name;
+  document.getElementById('studentRoll').innerText = data.student.roll_number;
+
+  const courseList = document.getElementById('courseList');
+  if (data.courses.length === 0) {
+    courseList.innerHTML = '<p>You are not enrolled in any courses.</p>';
+  } else {
+    courseList.innerHTML = data.courses.map(c => `
+      <button class="course-btn" onclick="startAttendance('${c.id}', '${c.course_code}')">
+        <div>
+          <div class="course-code">${c.course_code}</div>
+          <div style="font-size: 0.85rem; color: #6b7280;">${c.course_name}</div>
+        </div>
+        <span>➡️</span>
+      </button>
+    `).join('');
+  }
+}
+
+document.getElementById('enrollBtn').onclick = async () => {
+  const course_code = document.getElementById('enrollCourseCode').value.trim();
+  if (!course_code) return;
+  
+  const res = await fetch('/api/student-data', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ roll_number })
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentSession.access_token}`
+    },
+    body: JSON.stringify({ course_code })
+  });
+  
+  if (res.ok) {
+    document.getElementById('enrollCourseCode').value = '';
+    loadDashboard();
+  } else {
+    const err = await res.json();
+    alert(err.error);
+  }
+};
+
+// ==========================================
+// FINGERPRINT & ATTENDANCE LOGIC
+// ==========================================
+
+document.getElementById('registerDeviceBtn').onclick = async () => {
+  const status = document.getElementById('setupStatus');
+  status.innerText = 'Initializing hardware...';
+  
+  // Note: Update lib/register-options.js to read req.headers.authorization
+  const optRes = await fetch('/api/register-options', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
   });
   const options = await optRes.json();
-  if (!optRes.ok) { status.innerText = options.error; return; }
+  
+  try {
+    const assertion = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
+    const verifyRes = await fetch('/api/register-verify', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentSession.access_token}` 
+      },
+      body: JSON.stringify({ response: assertion })
+    });
+    
+    if (verifyRes.ok) loadDashboard();
+    else status.innerText = 'Registration failed on server.';
+  } catch (err) {
+    status.innerText = err.message;
+  }
+};
 
-  // 2. Prompt fingerprint hardware
+async function startAttendance(courseId, courseCode) {
+  // 1. Get Fingerprint Challenge
+  const optRes = await fetch('/api/attendance-options', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+  });
+  const options = await optRes.json();
+  if (!optRes.ok) return alert(options.error);
+
+  // 2. Prompt Fingerprint
   let assertion;
   try {
     assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
   } catch (err) {
-    status.innerText = 'Fingerprint check cancelled or failed: ' + err.message;
-    return;
+    return console.log("Fingerprint cancelled");
   }
 
-  status.innerText = 'Verifying...';
-
-  // 3. Verify on server and receive the 20-second token
+  // 3. Verify & Get 20-second token
   const verifyRes = await fetch('/api/attendance-verify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ roll_number, response: assertion })
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentSession.access_token}`
+    },
+    body: JSON.stringify({ response: assertion })
   });
+  const verification = await verifyRes.json();
+  if (!verifyRes.ok) return alert(verification.error);
 
-  // Read the raw response first instead of blindly forcing JSON
-  const rawText = await verifyRes.text();
-  let result;
-
-  try {
-    result = JSON.parse(rawText);
-  } catch (err) {
-    // If Vercel returns an HTML crash page, this catches it and prints the status code
-    status.innerText = `Server crashed (Status ${verifyRes.status}). Check Vercel logs.`;
-    console.error("Raw server response:", rawText);
-    return;
-  }
-
-  if (verifyRes.ok) {
-    authToken = result.token;
-    document.getElementById('authSection').style.display = 'none';
-    document.getElementById('scannerSection').style.display = 'block';
-
-    // Initialize the camera automatically
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-    html5QrCode.start(
-      { facingMode: "environment" }, // Forces the rear phone camera
-      config,
-      async (decodedText) => {
-        // 1. Stop the camera immediately on successful read so it doesn't spam the server
-        await html5QrCode.stop();
-        document.getElementById('scannerSection').innerHTML = '<p>Submitting attendance...</p>';
-
-        // 2. Send both the 20-second fingerprint proof and the 6-second QR payload
-        const markRes = await fetch('/api/mark-attendance', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            auth_token: authToken,
-            qr_payload: decodedText
-          })
-        });
-
-        const markData = await markRes.json();
-        const scannerDiv = document.getElementById('scannerSection');
-
-        if (markRes.ok) {
-          scannerDiv.innerHTML = `
-            <div style="text-align: center; color: #059669;">
-              <h2 style="font-size: 2rem; margin-bottom: 10px;">✅</h2>
-              <p style="font-size: 1.2rem; font-weight: bold; color: #059669;">Attendance Marked!</p>
-            </div>`;
-        } else {
-          // If the 6-second window passed, or they double-scanned, show the error
-          scannerDiv.innerHTML = `
-            <div style="text-align: center; color: #ef4444;">
-              <h2 style="font-size: 2rem; margin-bottom: 10px;">❌</h2>
-              <p style="font-weight: bold; color: #ef4444; margin-bottom: 15px;">${markData.error}</p>
-              <button onclick="location.reload()" style="background-color: #ef4444;">Try Again</button>
-            </div>`;
-        }
-      },
-      (errorMessage) => {
-        // This triggers constantly while the camera searches for a QR code. 
-        // We safely ignore it so it doesn't flood the console.
+  // 4. Open Camera Scanner
+  document.getElementById('dashboardSection').style.display = 'none';
+  document.getElementById('scannerSection').style.display = 'block';
+  document.getElementById('scanningCourseTitle').innerText = courseCode;
+  
+  html5QrCode = new Html5Qrcode("reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    async (decodedText) => {
+      await html5QrCode.stop();
+      document.getElementById('scanStatus').innerText = 'Submitting...';
+      
+      const markRes = await fetch('/api/mark-attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth_token: verification.token, qr_payload: decodedText })
+      });
+      
+      const markData = await markRes.json();
+      if (markRes.ok) {
+        document.getElementById('scannerSection').innerHTML = `
+          <h2 style="color: #059669; font-size: 2rem; margin-top: 20px;">✅</h2>
+          <p style="font-weight: bold; font-size: 1.2rem;">Attendance Marked!</p>
+          <button onclick="location.reload()" style="margin-top: 20px;">Back to Dashboard</button>
+        `;
+      } else {
+        alert(markData.error);
+        location.reload();
       }
-    ).catch((err) => {
-      document.getElementById('scannerSection').innerHTML = `<p style="color: #ef4444;">Camera access denied or unavailable.</p>`;
-    });
+    },
+    () => {} // Ignore scan errors
+  );
+}
 
-  } else {
-    status.innerText = result.error || 'Unknown error occurred.';
-  }
+document.getElementById('cancelScanBtn').onclick = async () => {
+  if (html5QrCode) await html5QrCode.stop();
+  location.reload();
 };
+
+init();

@@ -1,31 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Attendance Portal</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-  <!-- Add this new line for the camera scanner -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    .header-bar { background: var(--primary-color); color: white; padding: 15px; border-radius: var(--border-radius) var(--border-radius) 0 0; margin: -30px -30px 20px -30px; text-align: left; }
+    .header-bar h2 { margin: 0; font-size: 1.2rem; }
+    .header-bar p { margin: 0; font-size: 0.9rem; color: #e0e7ff; }
+    .course-btn { background: #f3f4f6; color: var(--text-main); border: 1px solid #d1d5db; text-align: left; padding: 15px; margin-bottom: 10px; border-radius: var(--border-radius); cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+    .course-btn:hover { background: #e5e7eb; border-color: #9ca3af; }
+    .course-code { font-weight: bold; color: var(--primary-color); }
+    #reader { width: 100%; border-radius: var(--border-radius); overflow: hidden; margin-bottom: 15px; }
+  </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Mark Attendance</h1>
+  <div class="card" style="max-width: 500px;">
     
+    <!-- 1. AUTH SECTION -->
     <div id="authSection">
-      <input id="markRollNumber" placeholder="Enter Roll Number" />
-      <button id="verifyIdentityBtn">Verify Identity</button>
+      <h1>Student Portal</h1>
+      <p style="margin-bottom: 15px;">Sign in with your institute email to mark attendance.</p>
+      <button id="googleLoginBtn">Sign In with Google</button>
       <p id="authStatus"></p>
     </div>
 
-    <div id="scannerSection" style="display: none;">
-      <p>Authentication valid for 20 seconds. Scan QR code now!</p>
-      <div id="reader"></div>
+    <!-- 2. SETUP FINGERPRINT SECTION -->
+    <div id="setupSection" style="display: none;">
+      <h1>Device Registration</h1>
+      <p style="margin-bottom: 15px;">You must register your fingerprint on this device to mark attendance.</p>
+      <button id="registerDeviceBtn">Register Fingerprint</button>
+      <p id="setupStatus"></p>
     </div>
+
+    <!-- 3. MAIN DASHBOARD SECTION -->
+    <div id="dashboardSection" style="display: none;">
+      <div class="header-bar">
+        <h2 id="studentName">Name</h2>
+        <p id="studentRoll">Roll Number</p>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <input id="enrollCourseCode" placeholder="Enter Course Code (e.g., CS201)" style="margin-bottom: 0;" />
+        <button id="enrollBtn" style="width: auto; margin-bottom: 0; white-space: nowrap;">Add Course</button>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 20px;">
+        <h3 style="font-size: 1rem; margin-bottom: 10px;">My Courses (Click to Mark)</h3>
+        <div id="courseList">
+          <!-- Course buttons inject here -->
+        </div>
+      </div>
+      
+      <button onclick="supabaseClient.auth.signOut()" style="background: #ef4444;">Logout</button>
+    </div>
+
+    <!-- 4. SCANNER SECTION -->
+    <div id="scannerSection" style="display: none;">
+      <h2 style="margin-bottom: 10px;" id="scanningCourseTitle">Scanning...</h2>
+      <p style="color: #059669; font-weight: bold;">Fingerprint verified. Scan QR within 20s.</p>
+      <div id="reader"></div>
+      <p id="scanStatus"></p>
+      <button id="cancelScanBtn" style="background: #6b7280;">Cancel</button>
+    </div>
+
   </div>
   <script src="attendance.js"></script>
 </body>
