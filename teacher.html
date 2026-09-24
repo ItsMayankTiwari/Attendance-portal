@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="card" style="max-width: 500px;">
+    <h1>Class Attendance QR</h1>
+    <div id="startSection">
+      <input id="courseCode" placeholder="Course code (optional)" />
+      <button id="startBtn">Start Session</button>
+    </div>
+    <div id="qrSection" style="display:none;">
+      <canvas id="qrCanvas"></canvas>
+      <p id="qrStatus"></p>
+      <button id="endBtn">End Session</button>
+    </div>
+  </div>
+  <script src="teacher.js"></script>
+</body>
+</html>
