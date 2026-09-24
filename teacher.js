@@ -88,8 +88,16 @@ async function refreshQR() {
   }
   
   status.innerText = ''; // clear errors
-  QRCode.toCanvas(document.getElementById('qrCanvas'), data.payload, { width: 320 }, (err) => {
-    if (err) console.error(err);
+  
+  const qrBox = document.getElementById('qrBox');
+  qrBox.innerHTML = ''; // Clear the previous QR code
+  
+  new QRCode(qrBox, {
+    text: data.payload,
+    width: 250,
+    height: 250,
+    colorDark : "#000000",
+    colorLight : "#ffffff"
   });
   
   if (!pollTimer) pollTimer = setInterval(refreshQR, data.rotation_seconds * 1000);

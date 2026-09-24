@@ -1,18 +1,13 @@
-<!DOCTYPE html>
-<html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   
-  <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- QR Code Library (Switched to unpkg to match your WebAuthn library) -->
-   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <!-- 1. Swap to the bulletproof qrcode.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
     .qr-container { background: white; padding: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db; margin: 0 auto 20px auto; display: flex; justify-content: center; align-items: center; }
-    #qrCanvas { width: 100% !important; max-width: 320px; height: auto !important; }
     .btn-danger { background-color: #ef4444; }
     .btn-danger:hover { background-color: #dc2626; }
     .counter-badge { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 15px 0; padding: 10px; background: #e0e7ff; border-radius: var(--border-radius); }
@@ -30,13 +25,13 @@
     <div id="qrSection" style="display:none;">
       <p style="margin-bottom: 15px; color: var(--text-main);">Project this code. It updates every 6 seconds.</p>
       
-      <!-- 3. The Counter UI -->
       <div class="counter-badge">
         Successful Scans: <span id="scanCount">0</span>
       </div>
 
       <div class="qr-container">
-        <canvas id="qrCanvas"></canvas>
+        <!-- 2. Changed from canvas to div -->
+        <div id="qrBox"></div> 
       </div>
       
       <p id="qrStatus"></p>
@@ -45,4 +40,3 @@
   </div>
   <script src="teacher.js"></script>
 </body>
-</html>
