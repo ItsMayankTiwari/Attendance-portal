@@ -11,6 +11,7 @@ import sessionAttendance from '../lib/session-attendance.js';
 import startSession from '../lib/start-session.js';
 import updateProfile from '../lib/update-profile.js';
 import teacherCourses from '../lib/teacher-courses.js';
+import studentData from '../lib/student-data.js';
 
 const routes = {
   'teacher-courses': teacherCourses,
@@ -25,7 +26,8 @@ const routes = {
   'register-verify': registerVerify,
   'session-attendance': sessionAttendance,
   'start-session': startSession,
-  'update-profile': updateProfile
+  'update-profile': updateProfile,
+  'student-data': studentData
 };
 
 // ... (Keep your imports and 'routes' object here)

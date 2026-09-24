@@ -8,7 +8,7 @@ let html5QrCode = null;
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   currentSession = session;
-  
+
   supabaseClient.auth.onAuthStateChange((_event, newSession) => {
     currentSession = newSession;
     if (!newSession) location.reload();
@@ -29,51 +29,71 @@ document.getElementById('googleLoginBtn').onclick = async () => {
 };
 
 async function loadDashboard() {
-  const res = await fetch('/api/student-data', {
-    headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
-  });
-  const data = await res.json();
-  
-  if (!data.student.is_registered) {
-    document.getElementById('setupSection').style.display = 'block';
-    return;
-  }
+  try {
+    const res = await fetch('/api/student-data', {
+      headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+    });
 
-  document.getElementById('setupSection').style.display = 'none';
-  document.getElementById('dashboardSection').style.display = 'block';
-  
-  document.getElementById('studentName').innerText = data.student.name;
-  document.getElementById('studentRoll').innerText = data.student.roll_number;
+    // Read raw text first to prevent silent JSON parse crashes
+    const rawText = await res.text();
+    let data;
 
-  const courseList = document.getElementById('courseList');
-  if (data.courses.length === 0) {
-    courseList.innerHTML = '<p>You are not enrolled in any courses.</p>';
-  } else {
-    courseList.innerHTML = data.courses.map(c => `
-      <button class="course-btn" onclick="startAttendance('${c.id}', '${c.course_code}')">
-        <div>
-          <div class="course-code">${c.course_code}</div>
-          <div style="font-size: 0.85rem; color: #6b7280;">${c.course_name}</div>
-        </div>
-        <span>➡️</span>
-      </button>
-    `).join('');
+    try {
+      data = JSON.parse(rawText);
+    } catch (err) {
+      throw new Error(`Server crashed (Status ${res.status}). Check Vercel logs.`);
+    }
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to load profile.');
+    }
+
+    if (!data.student.is_registered) {
+      document.getElementById('setupSection').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('setupSection').style.display = 'none';
+    document.getElementById('dashboardSection').style.display = 'block';
+
+    document.getElementById('studentName').innerText = data.student.name;
+    document.getElementById('studentRoll').innerText = data.student.roll_number;
+
+    const courseList = document.getElementById('courseList');
+    if (data.courses.length === 0) {
+      courseList.innerHTML = '<p>You are not enrolled in any courses.</p>';
+    } else {
+      courseList.innerHTML = data.courses.map(c => `
+        <button class="course-btn" onclick="startAttendance('${c.id}', '${c.course_code}')">
+          <div>
+            <div class="course-code">${c.course_code}</div>
+            <div style="font-size: 0.85rem; color: #6b7280;">${c.course_name}</div>
+          </div>
+          <span>➡️</span>
+        </button>
+      `).join('');
+    }
+  } catch (error) {
+    // If anything fails, bring the login screen back and show the error
+    document.getElementById('authSection').style.display = 'block';
+    document.getElementById('authStatus').innerText = `Dashboard Error: ${error.message}`;
+    document.getElementById('authStatus').style.color = '#ef4444';
   }
 }
 
 document.getElementById('enrollBtn').onclick = async () => {
   const course_code = document.getElementById('enrollCourseCode').value.trim();
   if (!course_code) return;
-  
+
   const res = await fetch('/api/student-data', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${currentSession.access_token}`
     },
     body: JSON.stringify({ course_code })
   });
-  
+
   if (res.ok) {
     document.getElementById('enrollCourseCode').value = '';
     loadDashboard();
@@ -90,25 +110,25 @@ document.getElementById('enrollBtn').onclick = async () => {
 document.getElementById('registerDeviceBtn').onclick = async () => {
   const status = document.getElementById('setupStatus');
   status.innerText = 'Initializing hardware...';
-  
+
   // Note: Update lib/register-options.js to read req.headers.authorization
   const optRes = await fetch('/api/register-options', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
   });
   const options = await optRes.json();
-  
+
   try {
     const assertion = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
     const verifyRes = await fetch('/api/register-verify', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${currentSession.access_token}` 
+        'Authorization': `Bearer ${currentSession.access_token}`
       },
       body: JSON.stringify({ response: assertion })
     });
-    
+
     if (verifyRes.ok) loadDashboard();
     else status.innerText = 'Registration failed on server.';
   } catch (err) {
@@ -136,7 +156,7 @@ async function startAttendance(courseId, courseCode) {
   // 3. Verify & Get 20-second token
   const verifyRes = await fetch('/api/attendance-verify', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${currentSession.access_token}`
     },
@@ -149,7 +169,7 @@ async function startAttendance(courseId, courseCode) {
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('scannerSection').style.display = 'block';
   document.getElementById('scanningCourseTitle').innerText = courseCode;
-  
+
   html5QrCode = new Html5Qrcode("reader");
   html5QrCode.start(
     { facingMode: "environment" },
@@ -157,13 +177,13 @@ async function startAttendance(courseId, courseCode) {
     async (decodedText) => {
       await html5QrCode.stop();
       document.getElementById('scanStatus').innerText = 'Submitting...';
-      
+
       const markRes = await fetch('/api/mark-attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ auth_token: verification.token, qr_payload: decodedText })
       });
-      
+
       const markData = await markRes.json();
       if (markRes.ok) {
         document.getElementById('scannerSection').innerHTML = `
@@ -176,7 +196,7 @@ async function startAttendance(courseId, courseCode) {
         location.reload();
       }
     },
-    () => {} // Ignore scan errors
+    () => { } // Ignore scan errors
   );
 }
 
