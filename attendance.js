@@ -206,3 +206,44 @@ document.getElementById('cancelScanBtn').onclick = async () => {
 };
 
 init();
+
+document.getElementById('loadRecordsBtn').onclick = async () => {
+  const container = document.getElementById('recordsContainer');
+  container.innerHTML = '<p>Loading records...</p>';
+
+  const res = await fetch('/api/student-records', {
+    headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+  });
+  
+  if (!res.ok) {
+    container.innerHTML = '<p style="color:red;">Failed to load records.</p>';
+    return;
+  }
+  
+  const stats = await res.json();
+  if (stats.length === 0) {
+    container.innerHTML = '<p>No course data available.</p>';
+    return;
+  }
+
+  container.innerHTML = stats.map(s => {
+    let datesHtml = s.dates_present.map(d => `<li>${new Date(d).toLocaleDateString()}</li>`).join('');
+    if (!datesHtml) datesHtml = '<li>No classes attended yet.</li>';
+    
+    return `
+      <div style="background: #f9fafb; border: 1px solid #d1d5db; padding: 12px; margin-bottom: 10px; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <strong style="color: var(--primary-color);">${s.course_code}</strong>
+          <strong>${s.percentage}%</strong>
+        </div>
+        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 10px;">Attended ${s.attended_classes} of ${s.total_classes} classes</p>
+        <details style="font-size: 0.85rem; cursor: pointer;">
+          <summary style="font-weight: 500;">View Dates Present</summary>
+          <ul style="margin-top: 5px; padding-left: 20px; color: #4b5563;">
+            ${datesHtml}
+          </ul>
+        </details>
+      </div>
+    `;
+  }).join('');
+};

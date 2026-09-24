@@ -55,6 +55,14 @@
           <!-- Course buttons inject here -->
         </div>
       </div>
+
+      <hr style="margin: 25px 0; border: none; border-top: 1px solid #e5e7eb;">
+      
+      <div style="text-align: left; margin-bottom: 20px;">
+        <h3 style="font-size: 1rem; margin-bottom: 10px;">My Attendance Records</h3>
+        <button id="loadRecordsBtn" class="btn-secondary" style="background: #4b5563;">View Statistics</button>
+        <div id="recordsContainer" style="margin-top: 15px;"></div>
+      </div>
       
       <button onclick="supabaseClient.auth.signOut()" style="background: #ef4444;">Logout</button>
     </div>

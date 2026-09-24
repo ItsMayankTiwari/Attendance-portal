@@ -12,6 +12,8 @@ import startSession from '../lib/start-session.js';
 import updateProfile from '../lib/update-profile.js';
 import teacherCourses from '../lib/teacher-courses.js';
 import studentData from '../lib/student-data.js';
+import studentRecords from '../lib/student-records.js';
+import teacherRecords from '../lib/teacher-records.js';
 
 const routes = {
   'teacher-courses': teacherCourses,
@@ -27,7 +29,9 @@ const routes = {
   'session-attendance': sessionAttendance,
   'start-session': startSession,
   'update-profile': updateProfile,
-  'student-data': studentData
+  'student-data': studentData,
+  'student-records': studentRecords,
+  'teacher-records': teacherRecords
 };
 
 // ... (Keep your imports and 'routes' object here)

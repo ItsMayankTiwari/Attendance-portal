@@ -58,9 +58,13 @@ async function loadCourses() {
   courseSelect.innerHTML = '<option value="">-- Select a Course --</option>';
   taCourseSelect.innerHTML = '<option value="">-- Assign TA to Course --</option>';
 
+  const recordCourseSelect = document.getElementById('recordCourseSelect');
+  recordCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+
   courses.forEach(c => {
     const opt = `<option value="${c.id}">${c.course_code} - ${c.course_name} (${c.user_role})</option>`;
     courseSelect.innerHTML += opt;
+    recordCourseSelect.innerHTML += opt;
     if (c.user_role === 'INSTRUCTOR') {
       taCourseSelect.innerHTML += opt;
     }
@@ -216,3 +220,63 @@ document.getElementById('endBtn').onclick = async () => {
 
 // Initialize on page load
 initAuth();
+
+document.getElementById('fetchRecordsBtn').onclick = async () => {
+  const course_id = document.getElementById('recordCourseSelect').value;
+  if (!course_id) return alert('Please select a course.');
+
+  const container = document.getElementById('teacherRecordsContainer');
+  container.innerHTML = '<p>Loading student data...</p>';
+
+  const res = await fetch(`/api/teacher-records?course_id=${course_id}`, {
+    headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+  });
+  
+  if (!res.ok) {
+    container.innerHTML = '<p style="color:red;">Failed to load records.</p>';
+    return;
+  }
+  
+  const data = await res.json();
+  
+  if (data.stats.length === 0) {
+    container.innerHTML = '<p>No students enrolled in this course.</p>';
+    return;
+  }
+
+  const tableRows = data.stats.map(s => {
+    let datesHtml = s.dates_present.map(d => `<li>${new Date(d).toLocaleDateString()}</li>`).join('');
+    if (!datesHtml) datesHtml = '<li>None</li>';
+
+    return `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 8px;"><strong>${s.roll_number}</strong><br><span style="font-size:0.75rem; color:#6b7280;">${s.name}</span></td>
+        <td style="padding: 8px; text-align: center;">${s.attended_classes}/${s.total_classes}</td>
+        <td style="padding: 8px; text-align: center; font-weight: bold; color: ${s.percentage < 75 ? '#ef4444' : '#059669'};">${s.percentage}%</td>
+        <td style="padding: 8px;">
+          <details style="font-size: 0.8rem; cursor: pointer;">
+            <summary>Dates</summary>
+            <ul style="padding-left: 15px; margin-top: 5px;">${datesHtml}</ul>
+          </details>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <p style="font-size: 0.9rem; margin-bottom: 10px;">Total Sessions Held: <strong>${data.total_sessions}</strong></p>
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead style="background: #f3f4f6;">
+        <tr>
+          <th style="padding: 8px;">Student</th>
+          <th style="padding: 8px; text-align: center;">Classes</th>
+          <th style="padding: 8px; text-align: center;">%</th>
+          <th style="padding: 8px;">History</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows}
+      </tbody>
+    </table>
+  `;
+};

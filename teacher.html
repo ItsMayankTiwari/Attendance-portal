@@ -62,6 +62,18 @@
       </div>
     </div>
 
+    <!-- Course Attendance Records -->
+      <div class="panel">
+        <h3>View Attendance Records</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+          <select id="recordCourseSelect" style="width: 100%; padding: 10px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
+            <option value="">-- Select Course --</option>
+          </select>
+          <button id="fetchRecordsBtn" class="btn-secondary" style="width: auto; margin-bottom: 0;">Fetch</button>
+        </div>
+        <div id="teacherRecordsContainer"></div>
+      </div>
+
     <!-- 3. LIVE QR & ATTENDANCE SCREEN -->
     <div id="qrSection" style="display: none;">
       <p style="margin-bottom: 10px; font-weight: 600;">Project this QR code. It updates every 6 seconds.</p>
