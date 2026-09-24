@@ -42,9 +42,16 @@ document.getElementById('startBtn').onclick = async () => {
 };
 
 function setupRealtimeListener(currentSessionId) {
-  // Listen for new rows added to attendance_records for this specific session
-  realtimeSubscription = supabaseClient
-    .channel('attendance_channel')
+  // 1. Remove any hanging channels first to prevent the "after subscribe" error
+  if (realtimeSubscription) {
+    supabaseClient.removeChannel(realtimeSubscription);
+  }
+  
+  // 2. Create a uniquely named channel for this specific session
+  realtimeSubscription = supabaseClient.channel(`session_${currentSessionId}`);
+  
+  // 3. Attach the event listener, THEN subscribe
+  realtimeSubscription
     .on('postgres_changes', { 
       event: 'INSERT', 
       schema: 'public', 
