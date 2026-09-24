@@ -28,9 +28,12 @@ const routes = {
   'update-profile': updateProfile
 };
 
+// ... (Keep your imports and 'routes' object here)
+
 export default async function handler(req, res) {
-  const { route } = req.query; 
-  const path = Array.isArray(route) ? route[0] : route;
+  const urlPath = req.url.split('?')[0];
+  const pathSegments = urlPath.split('/').filter(Boolean);
+  const path = pathSegments[pathSegments.length - 1];
 
   const routeHandler = routes[path];
 
