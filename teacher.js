@@ -36,21 +36,18 @@ document.getElementById('startBtn').onclick = async () => {
   
   scanCount = 0;
   document.getElementById('scanCount').innerText = scanCount;
+
+  fetchLiveRoster();
   
   refreshQR();
   setupRealtimeListener(sessionId);
 };
 
 function setupRealtimeListener(currentSessionId) {
-  // 1. Remove any hanging channels first to prevent the "after subscribe" error
-  if (realtimeSubscription) {
-    supabaseClient.removeChannel(realtimeSubscription);
-  }
+  if (realtimeSubscription) supabaseClient.removeChannel(realtimeSubscription);
   
-  // 2. Create a uniquely named channel for this specific session
   realtimeSubscription = supabaseClient.channel(`session_${currentSessionId}`);
   
-  // 3. Attach the event listener, THEN subscribe
   realtimeSubscription
     .on('postgres_changes', { 
       event: 'INSERT', 
@@ -60,6 +57,7 @@ function setupRealtimeListener(currentSessionId) {
     }, payload => {
       scanCount++;
       document.getElementById('scanCount').innerText = scanCount;
+      fetchLiveRoster(); // Fetch the updated join table
     })
     .subscribe();
 }
@@ -120,3 +118,22 @@ document.getElementById('endBtn').onclick = async () => {
   document.getElementById('qrSection').style.display = 'none';
   document.getElementById('startSection').style.display = 'block';
 };
+
+async function fetchLiveRoster() {
+  const res = await fetch(`/api/session-attendance?session_id=${sessionId}`);
+  if (!res.ok) return;
+  const records = await res.json();
+  
+  const scanList = document.getElementById('scanList');
+  if (records.length === 0) {
+    scanList.innerHTML = '<li>No scans yet.</li>';
+    return;
+  }
+
+  scanList.innerHTML = records.map(record => {
+    const time = new Date(record.marked_at).toLocaleTimeString();
+    return `<li style="padding: 4px 0; border-bottom: 1px solid #f3f4f6;">
+      <strong>${record.students.roll_number}</strong> - ${record.students.name} <span style="font-size: 0.75rem; float: right;">${time}</span>
+    </li>`;
+  }).join('');
+}

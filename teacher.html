@@ -30,10 +30,17 @@
       </div>
 
       <div class="qr-container">
-        <!-- 2. Changed from canvas to div -->
         <div id="qrBox"></div> 
       </div>
       
+      <!-- New Live Dashboard UI -->
+      <div id="attendanceList" style="margin-bottom: 20px; text-align: left; max-height: 180px; overflow-y: auto; background: white; padding: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
+         <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-main);">Live Roster</h3>
+         <ul id="scanList" style="list-style: none; padding: 0; font-size: 0.9rem; color: var(--text-muted);">
+            <li>No scans yet.</li>
+         </ul>
+      </div>
+
       <p id="qrStatus"></p>
       <button id="endBtn" class="btn-danger">End Session</button>
     </div>
