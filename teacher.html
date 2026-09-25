@@ -1,103 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Portal - Attendance</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <style>
-    .qr-container { background: white; padding: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db; margin: 0 auto 20px auto; display: flex; justify-content: center; align-items: center; }
-    .btn-danger { background-color: #ef4444; }
-    .btn-danger:hover { background-color: #dc2626; }
-    .btn-secondary { background-color: #4b5563; }
-    .btn-secondary:hover { background-color: #374151; }
-    .counter-badge { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 15px 0; padding: 10px; background: #e0e7ff; border-radius: var(--border-radius); }
-    .panel { text-align: left; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: var(--border-radius); padding: 15px; margin-bottom: 15px; }
-    .panel h3 { margin-bottom: 10px; font-size: 1.1rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Attendance — Instructor Console</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <div class="card" style="max-width: 550px;">
-    <h1>Instructor & TA Portal</h1>
 
-    <!-- 1. AUTH SCREEN -->
-    <div id="authSection">
-      <p style="margin-bottom: 15px;">Sign in using your authorized email address.</p>
-      <button id="googleLoginBtn">Sign In with Google</button>
-      <p id="authStatus"></p>
-    </div>
+<!-- ============ SIGN IN ============ -->
+<div class="screen is-active" id="screen-auth" style="max-width:none;">
+  <div class="screen-icon">🖋️</div>
+  <div>
+    <h1 class="eyebrow-free-title">Instructor Console</h1>
+    <p class="subtitle">Sign in with your authorised institute account.</p>
+  </div>
+  <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px;">Sign in with Google</button>
+  <p class="text-dim" id="auth-status" style="font-size:0.82rem;"></p>
+</div>
 
-    <!-- 2. DASHBOARD SCREEN -->
-    <div id="dashboardSection" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <span id="userBadge" style="font-size: 0.9rem; font-weight: bold; color: var(--primary-color);"></span>
-        <button id="logoutBtn" class="btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;">Logout</button>
-      </div>
-
-      <!-- Course Selection & Session Launcher -->
-      <div class="panel">
-        <h3>Launch Attendance Session</h3>
-        <select id="courseSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
-          <option value="">-- Select a Course --</option>
-        </select>
-        <button id="startBtn">Start Live Session</button>
-      </div>
-
-      <!-- Course & TA Management -->
-      <div class="panel">
-        <h3>Manage Courses & Staff</h3>
-        <input id="newCourseCode" placeholder="Course Code (e.g., CS201)" />
-        <input id="newCourseName" placeholder="Course Name" />
-        <button id="createCourseBtn">Create Course</button>
-
-        <hr style="margin: 15px 0; border: none; border-top: 1px solid #e5e7eb;">
-
-        <select id="taCourseSelect" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
-          <option value="">-- Assign TA to Course --</option>
-        </select>
-        <input id="taEmail" placeholder="TA Email ID" />
-        <button id="addTaBtn" class="btn-secondary">Add TA to Course</button>
-      </div>
-    </div>
-
-    <!-- Course Attendance Records -->
-      <div class="panel">
-        <h3>View Attendance Records</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-          <select id="recordCourseSelect" style="width: 100%; padding: 10px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
-            <option value="">-- Select Course --</option>
-          </select>
-          <button id="fetchRecordsBtn" class="btn-secondary" style="width: auto; margin-bottom: 0;">Fetch</button>
-        </div>
-        <div id="teacherRecordsContainer"></div>
-      </div>
-
-    <!-- 3. LIVE QR & ATTENDANCE SCREEN -->
-    <div id="qrSection" style="display: none;">
-      <p style="margin-bottom: 10px; font-weight: 600;">Project this QR code. It updates every 6 seconds.</p>
-      
-      <div class="counter-badge">
-        Present Attendees: <span id="scanCount">0</span>
-      </div>
-
-      <div class="qr-container">
-        <div id="qrBox"></div>
-      </div>
-      
-      <div id="attendanceList" style="margin-bottom: 20px; text-align: left; max-height: 180px; overflow-y: auto; background: white; padding: 15px; border-radius: var(--border-radius); border: 1px solid #d1d5db;">
-         <h3 style="font-size: 1rem; margin-bottom: 10px;">Live Roster</h3>
-         <ul id="scanList" style="list-style: none; padding: 0; font-size: 0.9rem; color: var(--text-muted);">
-            <li>No scans recorded yet.</li>
-         </ul>
-      </div>
-
-      <p id="qrStatus"></p>
-      <button id="endBtn" class="btn-danger">End Session</button>
-    </div>
+<!-- ============ CONSOLE SHELL ============ -->
+<div class="teacher-shell hidden" id="shell">
+  <div class="navrail">
+    <div class="brand" style="padding:8px 12px 18px;"><span class="brand-mark">R</span> The Register</div>
+    <button class="navrail-item is-active" data-view="overview">📋 Roster & overview</button>
+    <button class="navrail-item" data-view="grid">🗓️ Lecture grid</button>
+    <button class="navrail-item" data-view="live">📡 Live session</button>
+    <button class="navrail-item" data-view="courses">➕ Manage courses</button>
+    <div style="flex:1;"></div>
+    <div style="padding:10px 12px; font-size:0.78rem; color:var(--ink-text-dim);" id="user-badge"></div>
+    <button class="navrail-item" id="btn-logout">↩ Sign out</button>
   </div>
 
-  <script src="teacher.js"></script>
+  <div class="teacher-main">
+    <div class="spread" style="margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+      <h1 class="eyebrow-free-title" id="page-title">Roster &amp; overview</h1>
+      <select class="input" id="course-select" style="width:auto; min-width:220px;"></select>
+    </div>
+
+    <!-- ---- OVERVIEW ---- -->
+    <div class="teacher-view is-active" id="tview-overview">
+      <div id="overview-empty" class="ledger hidden"><div class="empty-state"><div class="empty-icon">🗂️</div><p>Select or create a course to see its roster.</p></div></div>
+
+      <div id="overview-content" class="hidden">
+        <div class="ledger" style="margin-bottom:18px;">
+          <div class="ledger-head"><h3>Snapshot</h3><span class="meta" id="overview-session-count">0 lectures held</span></div>
+          <div class="ledger-body" style="display:flex; gap:28px; flex-wrap:wrap; align-items:center;">
+            <div id="overview-donut"></div>
+            <div class="stack" style="gap:6px;">
+              <div style="font-size:1.4rem; font-weight:600; font-family:var(--font-mono);" id="overview-avg">—</div>
+              <div class="text-dim" style="font-size:0.82rem;">average attendance</div>
+            </div>
+            <div class="stack" style="gap:6px;">
+              <div style="font-size:1.4rem; font-weight:600; font-family:var(--font-mono);" id="overview-at-risk-count">—</div>
+              <div class="text-dim" style="font-size:0.82rem;">students below 75%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ledger" id="at-risk-panel" style="margin-bottom:18px;"></div>
+
+        <div class="ledger">
+          <div class="ledger-head">
+            <h3>Full roster</h3>
+            <button class="link-btn" id="btn-export-csv">Export CSV</button>
+          </div>
+          <div class="ledger-body">
+            <table class="data-table">
+              <thead><tr><th>Student</th><th class="num">Classes</th><th class="num">%</th></tr></thead>
+              <tbody id="roster-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- LECTURE GRID ---- -->
+    <div class="teacher-view" id="tview-grid">
+      <div id="grid-empty" class="ledger hidden"><div class="empty-state"><div class="empty-icon">🗓️</div><p>No lectures recorded for this course yet.</p></div></div>
+      <div class="ledger hidden" id="grid-content">
+        <div class="ledger-body grid-scroll" style="padding:16px;">
+          <table class="grid-table" id="lecture-grid-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- LIVE SESSION ---- -->
+    <div class="teacher-view" id="tview-live">
+      <div id="live-idle" class="ledger">
+        <div class="ledger-body" style="padding:24px; text-align:center;">
+          <p class="text-dim" style="margin-bottom:16px;">Start a session to project a rotating QR code for this course.</p>
+          <button class="btn btn-primary" id="btn-start-session" style="width:auto; padding-inline:22px;">Start live session</button>
+        </div>
+      </div>
+
+      <div id="live-active" class="hidden">
+        <div class="qr-stage" style="margin-bottom:18px;">
+          <div class="qr-frame">
+            <svg class="qr-ring-svg" viewBox="0 0 260 260">
+              <circle class="qr-ring-track" cx="130" cy="130" r="122"></circle>
+              <circle class="qr-ring-value" id="qr-ring-value" cx="130" cy="130" r="122" stroke-dasharray="766" stroke-dashoffset="0"></circle>
+            </svg>
+            <div id="qr-box"></div>
+          </div>
+          <p class="text-dim" style="font-size:0.85rem;">Refreshes every 6 seconds — project this for the room.</p>
+        </div>
+
+        <div class="spread" style="margin-bottom:14px;">
+          <div class="counter-tile"><span class="num" id="live-count">0</span><span class="text-dim" style="font-size:0.85rem;">marked present</span></div>
+          <button class="btn btn-danger" id="btn-end-session" style="width:auto; padding-inline:18px;">End session</button>
+        </div>
+
+        <div class="ledger">
+          <div class="ledger-head"><h3>Live roster</h3></div>
+          <div class="ledger-body--flush" id="live-roster-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- COURSES ---- -->
+    <div class="teacher-view" id="tview-courses">
+      <div class="ledger" style="margin-bottom:18px;">
+        <div class="ledger-head"><h3>Create a course</h3></div>
+        <div class="ledger-body">
+          <div class="field"><input class="input input-paper" id="input-new-code" placeholder="Course code, e.g. CS201"></div>
+          <div class="field"><input class="input input-paper" id="input-new-name" placeholder="Course name, e.g. Data Structures"></div>
+          <button class="btn btn-primary" id="btn-create-course" style="width:auto; padding-inline:20px;">Create course</button>
+        </div>
+      </div>
+      <div class="ledger">
+        <div class="ledger-head"><h3>Your courses</h3></div>
+        <div class="ledger-body--flush" id="courses-manage-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="teacher.js"></script>
 </body>
 </html>

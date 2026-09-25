@@ -4,7 +4,6 @@ import editAuthOptions from '../lib/edit-auth-options.js';
 import editAuthVerify from '../lib/edit-auth-verify.js';
 import endSession from '../lib/end-session.js';
 import markAttendance from '../lib/mark-attendance.js';
-import qrToken from '../lib/qr-token.js';
 import registerOptions from '../lib/register-options.js';
 import registerVerify from '../lib/register-verify.js';
 import sessionAttendance from '../lib/session-attendance.js';
@@ -23,7 +22,6 @@ const routes = {
   'edit-auth-verify': editAuthVerify,
   'end-session': endSession,
   'mark-attendance': markAttendance,
-  'qr-token': qrToken,
   'register-options': registerOptions,
   'register-verify': registerVerify,
   'session-attendance': sessionAttendance,
@@ -33,8 +31,6 @@ const routes = {
   'student-records': studentRecords,
   'teacher-records': teacherRecords
 };
-
-// ... (Keep your imports and 'routes' object here)
 
 export default async function handler(req, res) {
   const urlPath = req.url.split('?')[0];
