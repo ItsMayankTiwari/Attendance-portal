@@ -264,7 +264,14 @@ async function refreshQr() {
   const payload = await currentQrPayload(activeSessionId, sessionSecret, rotationSeconds);
   const box = document.getElementById('qr-box');
   box.innerHTML = '';
-  liveQrCodeInstance = new QRCode(box, { text: payload, width: 340, height: 340, colorDark: '#14122a', colorLight: '#f6f1e4' });
+  liveQrCodeInstance = new QRCode(box, {
+    text: payload,
+    width: 280,
+    height: 280,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L
+  });
 }
 
 // Live updates come from a plain poll rather than Supabase Realtime: it works

@@ -99,8 +99,8 @@ function donutSVG(pct, size = 132, stroke = 11) {
   const offset = c * (1 - Math.max(0, Math.min(100, pct)) / 100);
   return `
     <svg viewBox="0 0 ${size} ${size}">
-      <circle class="donut-track" cx="${size/2}" cy="${size/2}" r="${r}"></circle>
-      <circle class="donut-value ${pctClass(pct)}" cx="${size/2}" cy="${size/2}" r="${r}"
+      <circle class="donut-track" cx="${size / 2}" cy="${size / 2}" r="${r}"></circle>
+      <circle class="donut-value ${pctClass(pct)}" cx="${size / 2}" cy="${size / 2}" r="${r}"
         stroke-dasharray="${c}" stroke-dashoffset="${c}" data-final-offset="${offset}"></circle>
     </svg>`;
 }
@@ -125,7 +125,7 @@ async function hmacHex(secretHex, message) {
 async function currentQrPayload(sessionId, secretHex, rotationSeconds) {
   const bucket = Math.floor(Date.now() / 1000 / rotationSeconds);
   const mac = await hmacHex(secretHex, `${sessionId}:${bucket}`);
-  return `${sessionId}:${bucket}:${mac}`;
+  return `${sessionId}:${bucket}:${mac.slice(0, 16)}`;  // truncated
 }
 
 // ---- tiny confirm sheet (replaces native confirm()) -----------------------

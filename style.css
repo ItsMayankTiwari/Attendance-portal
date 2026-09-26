@@ -845,15 +845,24 @@ button.ledger-row:hover {
 
 .qr-frame {
   position: relative;
-  width: 340px;
-  height: 340px;
+  width: 360px;
+  height: 360px;
+  background: #ffffff;
+  padding: 40px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
 }
 
 .qr-frame canvas,
 .qr-frame img {
   width: 100% !important;
   height: 100% !important;
-  border-radius: 10px;
+  object-fit: contain;
+  display: block;
+  border-radius: 0;
 }
 
 .qr-ring-svg {
@@ -896,15 +905,32 @@ button.ledger-row:hover {
    Scan / verify screen
    ------------------------------------------------------------------------- */
 
-#reader { width: 100%; height: 100%; touch-action: none; }
-#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+#reader {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
 .scan-time-badge {
-  width: 84px; height: 84px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-mono); font-size: 2.1rem; font-weight: 600; color: #fff;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: #fff;
   background: rgba(10, 9, 22, 0.55);
   border: 2px solid var(--verified);
-  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 /* the verification "stamp" — the one deliberate motion moment */
