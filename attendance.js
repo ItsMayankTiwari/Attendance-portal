@@ -239,15 +239,22 @@ async function startAttendance(courseId, courseName) {
 
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
+    // Must have exactly ONE key — this is just camera selection.
+    // { exact: 'environment' } forces the back camera; if a device has
+    // no back camera this will reject rather than silently falling back
+    // to the front one, which is what we want on a mobile-only app.
+    { facingMode: { exact: 'environment' } },
     {
-      facingMode: 'environment',
-      // Ask for an HD feed without forcing a strict landscape ratio
-      width: { min: 720, ideal: 1280 }
-    },
-    {
-      fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
+      fps: 10,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
         const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
         return { width: edge, height: edge };
+      },
+      // Resolution/quality constraints go HERE, not in the first argument.
+      videoConstraints: {
+        facingMode: { exact: 'environment' },
+        width: { min: 720, ideal: 1920 },
+        height: { min: 720, ideal: 1080 }
       }
     },
     async (decodedText) => {
