@@ -136,7 +136,7 @@ function renderHome() {
   });
 }
 
-function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 
 // ---------------------------------------------------------------- records tab
 
@@ -239,13 +239,17 @@ async function startAttendance(courseId, courseName) {
 
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
-    // ideal (not exact) width/height — the browser picks the closest
-    // resolution the camera actually supports instead of failing outright.
-    { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-    { fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
+    {
+      facingMode: 'environment',
+      // Ask for an HD feed without forcing a strict landscape ratio
+      width: { min: 720, ideal: 1280 }
+    },
+    {
+      fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
         const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
         return { width: edge, height: edge };
-      } },
+      }
+    },
     async (decodedText) => {
       clearScanCountdown();
       safeStopScanner();
@@ -264,7 +268,7 @@ async function startAttendance(courseId, courseName) {
         document.getElementById('scan-fail-state').classList.remove('hidden');
       }
     },
-    () => {}
+    () => { }
   ).then(() => {
     enablePinchToZoom();
   }).catch(() => {
@@ -281,7 +285,7 @@ function safeStopScanner() {
   if (!html5QrCode) return;
   try {
     const result = html5QrCode.stop();
-    if (result && typeof result.catch === 'function') result.catch(() => {});
+    if (result && typeof result.catch === 'function') result.catch(() => { });
   } catch (e) { /* already stopped — nothing to do */ }
   html5QrCode = null;
 }
@@ -319,7 +323,7 @@ function enablePinchToZoom() {
       let next = pinchState.startZoom * ratio;
       next = Math.min(zoomCaps.max, Math.max(zoomCaps.min, next));
       currentZoom = next;
-      html5QrCode.applyVideoConstraints({ advanced: [{ zoom: next }] }).catch(() => {});
+      html5QrCode.applyVideoConstraints({ advanced: [{ zoom: next }] }).catch(() => { });
     }
   };
   reader.ontouchend = () => { pinchState = null; };
