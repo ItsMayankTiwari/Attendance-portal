@@ -12,8 +12,13 @@
 
 <body>
 
+  <!-- ============ LOADING ============ -->
+  <div class="screen is-active" id="screen-loading">
+    <div class="spinner" style="width:28px; height:28px; border-width:3px;"></div>
+  </div>
+
   <!-- ============ SIGN IN ============ -->
-  <div class="screen is-active" id="screen-auth" style="max-width:none;">
+  <div class="screen" id="screen-auth" style="max-width:none;">
     <div class="screen-icon">🖋️</div>
     <div>
       <h1 class="eyebrow-free-title">Instructor Console</h1>
@@ -121,9 +126,9 @@
         </div>
 
         <div id="live-active" class="hidden">
-                  <div class="qr-stage" style="margin-bottom:18px;">
-          <div class="qr-frame">
-            <div id="qr-box"></div>
+          <div class="qr-stage" style="margin-bottom:18px;">
+            <div class="qr-frame">
+              <div id="qr-box"></div>
             </div>
             <p class="text-dim" style="font-size:0.85rem;">Refreshes every 6 seconds — project this for the room.</p>
           </div>

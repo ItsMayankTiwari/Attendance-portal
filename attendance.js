@@ -27,7 +27,11 @@ async function init() {
     if (hadSession && !newSession) location.reload();
   });
 
-  if (session) await bootDashboard();
+  if (session) {
+    await bootDashboard();
+  } else {
+    show('screen-auth');
+  }
 }
 
 document.getElementById('btn-google-login').onclick = async () => {

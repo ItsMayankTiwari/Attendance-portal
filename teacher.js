@@ -26,7 +26,12 @@ async function init() {
     if (had && !newSession) location.reload();
   });
 
-  if (session) await bootConsole();
+  if (session) {
+    await bootConsole();
+  } else {
+    document.getElementById('screen-loading').classList.remove('is-active');
+    document.getElementById('screen-auth').classList.add('is-active');
+  }
 }
 
 document.getElementById('btn-google-login').onclick = async () => {
@@ -39,9 +44,12 @@ async function bootConsole() {
   try {
     courses = await authedFetch('/api/teacher-courses');
   } catch (err) {
+    document.getElementById('screen-loading').classList.remove('is-active');
+    document.getElementById('screen-auth').classList.add('is-active');
     document.getElementById('auth-status').textContent = err.message;
     return;
   }
+  document.getElementById('screen-loading').classList.remove('is-active');
   document.getElementById('screen-auth').classList.remove('is-active');
   document.getElementById('shell').classList.remove('hidden');
   document.getElementById('user-badge').textContent = session.user.email;
