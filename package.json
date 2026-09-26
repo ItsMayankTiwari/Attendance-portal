@@ -12,7 +12,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/MayankMT1024/Attendance-portal/issues"
   },
@@ -23,5 +23,3 @@
     "jsonwebtoken": "^9.0.3"
   }
 }
-
-
