@@ -896,57 +896,15 @@ button.ledger-row:hover {
    Scan / verify screen
    ------------------------------------------------------------------------- */
 
-.scan-ring {
-  position: relative;
-  width: min(320px, 82vw);
-  height: min(320px, 82vw);
-  margin: 0 auto;
-}
-
-.scan-ring svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.scan-ring-track {
-  fill: none;
-  stroke: var(--ink-800);
-  stroke-width: 5;
-}
-
-.scan-ring-value {
-  fill: none;
-  stroke: var(--verified);
-  stroke-width: 5;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1s linear;
-}
-
-.scan-ring-inner {
-  position: absolute;
-  inset: 14px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #000;
-}
-
-.scan-ring-inner video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.scan-time {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 1.6rem;
-  pointer-events: none;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+#reader { width: 100%; height: 100%; touch-action: none; }
+#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.scan-time-badge {
+  width: 84px; height: 84px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 2.1rem; font-weight: 600; color: #fff;
+  background: rgba(10, 9, 22, 0.55);
+  border: 2px solid var(--verified);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
 /* the verification "stamp" — the one deliberate motion moment */

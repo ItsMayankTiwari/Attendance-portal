@@ -210,12 +210,12 @@ document.getElementById('btn-confirm-add-course').onclick = async () => {
   }
 };
 
-// ---------------------------------------------------------------- mark attendance
-
 async function startAttendance(courseId, courseName) {
   document.getElementById('scan-course-title').textContent = courseName;
   document.getElementById('scan-verify-state').classList.remove('hidden');
   document.getElementById('scan-camera-state').classList.add('hidden');
+  document.getElementById('scan-time-wrap').classList.add('hidden');
+  document.getElementById('scan-hint').classList.add('hidden');
   document.getElementById('scan-success-state').classList.add('hidden');
   document.getElementById('scan-fail-state').classList.add('hidden');
   show('screen-scan');
@@ -233,11 +233,15 @@ async function startAttendance(courseId, courseName) {
 
   document.getElementById('scan-verify-state').classList.add('hidden');
   document.getElementById('scan-camera-state').classList.remove('hidden');
+  document.getElementById('scan-time-wrap').classList.remove('hidden');
+  document.getElementById('scan-hint').classList.remove('hidden');
   beginScanCountdown(20);
 
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
-    { facingMode: 'environment' },
+    // ideal (not exact) width/height — the browser picks the closest
+    // resolution the camera actually supports instead of failing outright.
+    { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
     { fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
         const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
         return { width: edge, height: edge };
@@ -246,6 +250,8 @@ async function startAttendance(courseId, courseName) {
       clearScanCountdown();
       safeStopScanner();
       document.getElementById('scan-camera-state').classList.add('hidden');
+      document.getElementById('scan-time-wrap').classList.add('hidden');
+      document.getElementById('scan-hint').classList.add('hidden');
 
       try {
         await authedFetchNoAuth('/api/mark-attendance', { auth_token: verification.token, qr_payload: decodedText });
@@ -260,7 +266,7 @@ async function startAttendance(courseId, courseName) {
     },
     () => {}
   ).then(() => {
-    enableZoomControlIfSupported();
+    enablePinchToZoom();
   }).catch(() => {
     toast('Could not access the camera.', 'error');
     closeScan();
@@ -280,20 +286,51 @@ function safeStopScanner() {
   html5QrCode = null;
 }
 
-// Optional: expose a zoom slider when the device camera reports zoom support.
-// Silently does nothing on devices/browsers that don't support it.
-function enableZoomControlIfSupported() {
+// Two-finger pinch to zoom, driven directly off the camera track's own
+// zoom range — no slider UI. Not every phone/browser exposes a zoom
+// capability on the video track (notably iOS Safari usually doesn't); when
+// it's missing this just does nothing, same as before.
+let pinchState = null;
+function enablePinchToZoom() {
+  const reader = document.getElementById('reader');
+  let zoomCaps, currentZoom;
   try {
-    const capabilities = html5QrCode.getRunningTrackCameraCapabilities();
-    const zoom = capabilities.zoomFeature ? capabilities.zoomFeature() : null;
-    const slider = document.getElementById('scan-zoom');
-    if (!zoom || !zoom.isSupported() || !slider) { if (slider) slider.classList.add('hidden'); return; }
-    slider.min = zoom.min(); slider.max = zoom.max(); slider.step = zoom.step() || 0.1;
-    slider.value = zoom.value();
-    slider.classList.remove('hidden');
-    slider.oninput = () => zoom.apply(parseFloat(slider.value));
-  } catch (e) { /* zoom API unavailable on this browser/version — fine to skip */ }
+    const capabilities = html5QrCode.getRunningTrackCapabilities();
+    zoomCaps = capabilities && capabilities.zoom;
+    const settings = html5QrCode.getRunningTrackSettings();
+    currentZoom = (settings && settings.zoom) || (zoomCaps ? zoomCaps.min : 1);
+  } catch (e) { zoomCaps = null; }
+  if (!zoomCaps) return;
+
+  const touchDistance = (touches) => Math.hypot(
+    touches[0].clientX - touches[1].clientX,
+    touches[0].clientY - touches[1].clientY
+  );
+
+  reader.ontouchstart = (e) => {
+    if (e.touches.length === 2) {
+      pinchState = { startDistance: touchDistance(e.touches), startZoom: currentZoom };
+    }
+  };
+  reader.ontouchmove = (e) => {
+    if (e.touches.length === 2 && pinchState) {
+      e.preventDefault();
+      const ratio = touchDistance(e.touches) / pinchState.startDistance;
+      let next = pinchState.startZoom * ratio;
+      next = Math.min(zoomCaps.max, Math.max(zoomCaps.min, next));
+      currentZoom = next;
+      html5QrCode.applyVideoConstraints({ advanced: [{ zoom: next }] }).catch(() => {});
+    }
+  };
+  reader.ontouchend = () => { pinchState = null; };
 }
+
+function disablePinchToZoom() {
+  const reader = document.getElementById('reader');
+  if (reader) { reader.ontouchstart = null; reader.ontouchmove = null; reader.ontouchend = null; }
+  pinchState = null;
+}
+
 // mark-attendance uses a short-lived fingerprint token instead of the Google
 // session, so it does not need the Authorization header.
 async function authedFetchNoAuth(path, body) {
@@ -305,14 +342,7 @@ async function authedFetchNoAuth(path, body) {
 }
 
 function beginScanCountdown(seconds) {
-  const ring = document.getElementById('scan-ring-value');
   const timeEl = document.getElementById('scan-time');
-  ring.style.transition = 'none';
-  ring.style.strokeDashoffset = '0';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    ring.style.transition = `stroke-dashoffset ${seconds}s linear`;
-    ring.style.strokeDashoffset = '628';
-  }));
   let remaining = seconds;
   timeEl.textContent = remaining;
   scanTimer = setInterval(() => {
@@ -322,6 +352,8 @@ function beginScanCountdown(seconds) {
       clearScanCountdown();
       safeStopScanner();
       document.getElementById('scan-camera-state').classList.add('hidden');
+      document.getElementById('scan-time-wrap').classList.add('hidden');
+      document.getElementById('scan-hint').classList.add('hidden');
       document.getElementById('scan-fail-text').textContent = 'Time ran out. Tap the course again to retry.';
       document.getElementById('scan-fail-state').classList.remove('hidden');
     }
@@ -331,12 +363,12 @@ function clearScanCountdown() { clearInterval(scanTimer); scanTimer = null; }
 
 function closeScan() {
   clearScanCountdown();
+  disablePinchToZoom();
   safeStopScanner();
   document.getElementById('shell').classList.remove('hidden');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('is-active'));
 }
 document.getElementById('btn-scan-cancel').onclick = closeScan;
-
 // ---------------------------------------------------------------- tabs
 
 document.querySelectorAll('.tab').forEach(tab => {

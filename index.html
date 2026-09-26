@@ -134,50 +134,43 @@
       </div>
     </div>
 
-    <!-- ============ SCAN OVERLAY ============ -->
-    <div class="screen" id="screen-scan"
-      style="position:fixed; inset:0; background:var(--ink-950); z-index:40; max-width:none;">
-      <div
-        style="max-width:480px; margin:0 auto; width:100%; padding:24px; display:flex; flex-direction:column; align-items:center; gap:18px; text-align:center;">
-        <h2 id="scan-course-title" style="font-size:1.1rem;">—</h2>
-
-        <div id="scan-verify-state">
-          <p class="subtitle">Waiting on fingerprint check…</p>
-        </div>
-
-        <div id="scan-camera-state" class="hidden">
-          <div class="scan-ring">
-            <svg viewBox="0 0 220 220">
-              <circle class="scan-ring-track" cx="110" cy="110" r="100"></circle>
-              <circle class="scan-ring-value" id="scan-ring-value" cx="110" cy="110" r="100" stroke-dasharray="628"
-                stroke-dashoffset="0"></circle>
-            </svg>
-            <div class="scan-ring-inner">
-              <div id="reader"></div>
-            </div>
-            <div class="scan-time" id="scan-time">20</div>
-          </div>
-          <input type="range" id="scan-zoom" class="hidden" style="width:100%; max-width:280px; margin-top:16px;"
-            min="1" max="5" step="0.1" value="1">
-          <p class="text-dim" style="margin-top:14px;">Point the camera at the projected QR code.</p>
-        </div>
-
-        <div id="scan-success-state" class="hidden stack" style="align-items:center;">
-          <div class="stamp">✓</div>
-          <p style="font-weight:600; font-size:1.05rem;">Attendance marked</p>
-        </div>
-
-        <div id="scan-fail-state" class="hidden stack" style="align-items:center;">
-          <div class="screen-icon">⚠️</div>
-          <p style="font-weight:600;" id="scan-fail-text">Couldn't mark attendance.</p>
-        </div>
-
-        <button class="btn btn-ghost" id="btn-scan-cancel"
-          style="width:auto; padding-inline:22px; margin-top:10px;">Close</button>
-      </div>
+  <!-- ============ SCAN OVERLAY ============ -->
+  <div class="screen" id="screen-scan" style="position:fixed; inset:0; background:#000; z-index:40; max-width:none; padding:0;">
+    <div id="scan-camera-state" class="hidden" style="position:absolute; inset:0;">
+      <div id="reader" style="width:100%; height:100%;"></div>
     </div>
 
+    <div style="position:relative; z-index:2; height:100%; width:100%; max-width:480px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none;">
+      <h2 id="scan-course-title" style="font-size:1.1rem; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.7); pointer-events:auto;">—</h2>
+
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; width:100%;">
+        <div id="scan-verify-state" style="pointer-events:auto;">
+          <p class="subtitle" style="color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.7);">Waiting on fingerprint check…</p>
+        </div>
+
+        <div id="scan-time-wrap" class="hidden">
+          <div class="scan-time-badge" id="scan-time">20</div>
+        </div>
+
+        <div id="scan-success-state" class="hidden stack" style="align-items:center; pointer-events:auto;">
+          <div class="stamp">✓</div>
+          <p style="font-weight:600; font-size:1.05rem; color:#fff;">Attendance marked</p>
+        </div>
+
+        <div id="scan-fail-state" class="hidden stack" style="align-items:center; pointer-events:auto;">
+          <div class="screen-icon">⚠️</div>
+          <p style="font-weight:600; color:#fff;" id="scan-fail-text">Couldn't mark attendance.</p>
+        </div>
+      </div>
+
+      <p class="text-dim hidden" id="scan-hint" style="color:#e8e6f5; text-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; margin-bottom:14px;">Point the camera at the projected QR code — pinch to zoom.</p>
+      <button class="btn btn-ghost" id="btn-scan-cancel" style="width:auto; padding-inline:22px; pointer-events:auto; margin-bottom:10px;">Close</button>
+    </div>
   </div>
+
+</div>
+
+<!-- ============ ADD COURSE SHEET ============ -->
 
   <!-- ============ ADD COURSE SHEET ============ -->
   <div class="sheet-backdrop" id="sheet-add-course">
