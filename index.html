@@ -1,204 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Attendance — Student</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Attendance — Student</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
+
 <body>
 
-<div class="app" id="app">
+  <div class="app" id="app">
 
-  <!-- ============ SIGN IN ============ -->
-  <div class="screen is-active" id="screen-auth">
-    <div class="screen-icon">🖋️</div>
-    <div>
-      <h1 class="eyebrow-free-title">The Register</h1>
-      <p class="subtitle">Sign in with your institute account to mark and track attendance.</p>
-    </div>
-    <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px;">Sign in with Google</button>
-    <p class="text-dim" id="auth-status" style="font-size:0.82rem;"></p>
-  </div>
-
-  <!-- ============ DEVICE SETUP ============ -->
-  <div class="screen" id="screen-setup">
-    <div class="screen-icon">🔐</div>
-    <div>
-      <h1 class="eyebrow-free-title">Register this device</h1>
-      <p class="subtitle">Attendance is verified with your fingerprint or face unlock, so it can't be marked by anyone but you.</p>
-    </div>
-    <button class="btn btn-primary" id="btn-register-device" style="width:auto; padding-inline:24px;">Set up verification</button>
-    <p class="text-dim" id="setup-status" style="font-size:0.82rem;"></p>
-  </div>
-
-  <!-- ============ MAIN SHELL ============ -->
-  <div id="shell" class="hidden" style="display:flex; flex-direction:column; min-height:100vh;">
-    <div class="topbar">
-      <div class="brand"><span class="brand-mark">R</span> The Register</div>
-      <button class="link-btn" id="btn-logout">Sign out</button>
+    <!-- ============ SIGN IN ============ -->
+    <div class="screen is-active" id="screen-auth">
+      <div class="screen-icon">🖋️</div>
+      <div>
+        <h1 class="eyebrow-free-title">Attendance</h1>
+        <p class="subtitle">Sign in with your institute account to mark and track attendance.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px;">Sign in with
+        Google</button>
+      <p class="text-dim" id="auth-status" style="font-size:0.82rem;"></p>
     </div>
 
-    <!-- ---- HOME ---- -->
-    <div class="view is-active" id="view-home">
-      <div class="ledger" style="margin-bottom:16px;">
-        <div style="padding:20px; display:flex; align-items:center; gap:14px;">
-          <div class="avatar" id="home-avatar">?</div>
-          <div style="min-width:0;">
-            <div class="ledger-row-title" id="home-name" style="font-size:1.05rem;">—</div>
-            <div class="ledger-row-sub mono" id="home-roll">—</div>
+    <!-- ============ DEVICE SETUP ============ -->
+    <div class="screen" id="screen-setup">
+      <div class="screen-icon">🔐</div>
+      <div>
+        <h1 class="eyebrow-free-title">Register this device</h1>
+        <p class="subtitle">Attendance is verified with your fingerprint or face unlock, so it can't be marked by anyone
+          but you.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-register-device" style="width:auto; padding-inline:24px;">Set up
+        verification</button>
+      <p class="text-dim" id="setup-status" style="font-size:0.82rem;"></p>
+    </div>
+
+    <!-- ============ MAIN SHELL ============ -->
+    <div id="shell" class="hidden" style="display:flex; flex-direction:column; min-height:100vh;">
+      <div class="topbar">
+        <div class="brand"><span class="brand-mark">A</span> Attendance</div>
+        <button class="link-btn" id="btn-logout">Sign out</button>
+      </div>
+
+      <!-- ---- HOME ---- -->
+      <div class="view is-active" id="view-home">
+        <div class="ledger" style="margin-bottom:16px;">
+          <div style="padding:20px; display:flex; align-items:center; gap:14px;">
+            <div class="avatar" id="home-avatar">?</div>
+            <div style="min-width:0;">
+              <div class="ledger-row-title" id="home-name" style="font-size:1.05rem;">—</div>
+              <div class="ledger-row-sub mono" id="home-roll">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ledger" id="overall-card" style="margin-bottom:16px;"></div>
+
+        <div class="spread" style="margin-bottom:10px;">
+          <h3 style="font-size:0.95rem;">Mark attendance</h3>
+          <button class="link-btn" id="btn-add-course">+ Add course</button>
+        </div>
+        <div class="ledger">
+          <div class="ledger-body--flush" id="course-list">
+            <div class="skel skel-row"></div>
+            <div class="skel skel-row"></div>
           </div>
         </div>
       </div>
 
-      <div class="ledger" id="overall-card" style="margin-bottom:16px;"></div>
-
-      <div class="spread" style="margin-bottom:10px;">
-        <h3 style="font-size:0.95rem;">Mark attendance</h3>
-        <button class="link-btn" id="btn-add-course">+ Add course</button>
-      </div>
-      <div class="ledger">
-        <div class="ledger-body--flush" id="course-list">
+      <!-- ---- RECORDS ---- -->
+      <div class="view" id="view-records">
+        <h1 class="eyebrow-free-title" style="margin-bottom:14px;">Records</h1>
+        <div id="records-list">
           <div class="skel skel-row"></div>
           <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
         </div>
       </div>
-    </div>
 
-    <!-- ---- RECORDS ---- -->
-    <div class="view" id="view-records">
-      <h1 class="eyebrow-free-title" style="margin-bottom:14px;">Records</h1>
-      <div id="records-list">
-        <div class="skel skel-row"></div>
-        <div class="skel skel-row"></div>
-        <div class="skel skel-row"></div>
-      </div>
-    </div>
-
-    <!-- ---- COURSE DETAIL (pushed over records) ---- -->
-    <div class="view" id="view-course-detail">
-      <button class="link-btn" id="btn-back-records" style="padding-left:0; margin-bottom:10px;">← Records</button>
-      <div class="ledger" style="margin-bottom:16px; padding:22px;">
-        <div class="donut-row">
-          <div id="detail-donut"></div>
-          <div>
-            <h2 id="detail-course-name" style="font-size:1.1rem;">—</h2>
-            <p class="text-dim mono" id="detail-course-meta" style="font-size:0.85rem; margin-top:4px;"></p>
+      <!-- ---- COURSE DETAIL (pushed over records) ---- -->
+      <div class="view" id="view-course-detail">
+        <button class="link-btn" id="btn-back-records" style="padding-left:0; margin-bottom:10px;">← Records</button>
+        <div class="ledger" style="margin-bottom:16px; padding:22px;">
+          <div class="donut-row">
+            <div id="detail-donut"></div>
+            <div>
+              <h2 id="detail-course-name" style="font-size:1.1rem;">—</h2>
+              <p class="text-dim mono" id="detail-course-meta" style="font-size:0.85rem; margin-top:4px;"></p>
+            </div>
           </div>
         </div>
-      </div>
-      <h3 style="font-size:0.9rem; margin-bottom:8px;">Lectures</h3>
-      <div class="ledger">
-        <div class="ledger-body--flush" id="detail-lecture-list"></div>
-      </div>
-    </div>
-
-    <!-- ---- PROFILE ---- -->
-    <div class="view" id="view-profile">
-      <h1 class="eyebrow-free-title" style="margin-bottom:14px;">Profile</h1>
-      <div class="ledger" style="padding:20px; margin-bottom:16px;">
-        <div class="stack" id="profile-view">
-          <div>
-            <label class="text-dim" style="font-size:0.72rem;">Name</label>
-            <div id="profile-name" style="font-weight:600;">—</div>
-          </div>
-          <div>
-            <label class="text-dim" style="font-size:0.72rem;">Roll number</label>
-            <div class="mono" id="profile-roll" style="font-weight:600;">—</div>
-          </div>
-          <div>
-            <label class="text-dim" style="font-size:0.72rem;">Institute email</label>
-            <div class="mono text-dim" id="profile-email" style="font-size:0.85rem;">—</div>
-          </div>
-          <button class="btn btn-ghost-paper" id="btn-edit-profile" style="margin-top:6px;">Edit name / roll number</button>
+        <h3 style="font-size:0.9rem; margin-bottom:8px;">Lectures</h3>
+        <div class="ledger">
+          <div class="ledger-body--flush" id="detail-lecture-list"></div>
         </div>
       </div>
-      <p class="text-dim" style="font-size:0.8rem; padding:0 4px;">Editing needs a fresh fingerprint check, and can't be used to re-mark attendance you've already logged under a different roll number — every record stays tied to your verified device.</p>
+
+      <!-- ---- PROFILE ---- -->
+      <div class="view" id="view-profile">
+        <h1 class="eyebrow-free-title" style="margin-bottom:14px;">Profile</h1>
+        <div class="ledger" style="padding:20px; margin-bottom:16px;">
+          <div class="stack" id="profile-view">
+            <div>
+              <label class="text-dim" style="font-size:0.72rem;">Name</label>
+              <div id="profile-name" style="font-weight:600;">—</div>
+            </div>
+            <div>
+              <label class="text-dim" style="font-size:0.72rem;">Roll number</label>
+              <div class="mono" id="profile-roll" style="font-weight:600;">—</div>
+            </div>
+            <div>
+              <label class="text-dim" style="font-size:0.72rem;">Institute email</label>
+              <div class="mono text-dim" id="profile-email" style="font-size:0.85rem;">—</div>
+            </div>
+            <button class="btn btn-ghost-paper" id="btn-edit-profile" style="margin-top:6px;">Edit name / roll
+              number</button>
+          </div>
+        </div>
+        <p class="text-dim" style="font-size:0.8rem; padding:0 4px;">Editing needs a fresh fingerprint check, and can't
+          be used to re-mark attendance you've already logged under a different roll number — every record stays tied to
+          your verified device.</p>
+      </div>
+
+      <div class="tabbar">
+        <button class="tab is-active" data-tab="home"><span class="tab-icon">🏠</span>Home</button>
+        <button class="tab" data-tab="records"><span class="tab-icon">📖</span>Records</button>
+        <button class="tab" data-tab="profile"><span class="tab-icon">🪪</span>Profile</button>
+      </div>
     </div>
 
-    <div class="tabbar">
-      <button class="tab is-active" data-tab="home"><span class="tab-icon">🏠</span>Home</button>
-      <button class="tab" data-tab="records"><span class="tab-icon">📖</span>Records</button>
-      <button class="tab" data-tab="profile"><span class="tab-icon">🪪</span>Profile</button>
+    <!-- ============ SCAN OVERLAY ============ -->
+    <div class="screen" id="screen-scan"
+      style="position:fixed; inset:0; background:var(--ink-950); z-index:40; max-width:none;">
+      <div
+        style="max-width:480px; margin:0 auto; width:100%; padding:24px; display:flex; flex-direction:column; align-items:center; gap:18px; text-align:center;">
+        <h2 id="scan-course-title" style="font-size:1.1rem;">—</h2>
+
+        <div id="scan-verify-state">
+          <p class="subtitle">Waiting on fingerprint check…</p>
+        </div>
+
+        <div id="scan-camera-state" class="hidden">
+          <div class="scan-ring">
+            <svg viewBox="0 0 220 220">
+              <circle class="scan-ring-track" cx="110" cy="110" r="100"></circle>
+              <circle class="scan-ring-value" id="scan-ring-value" cx="110" cy="110" r="100" stroke-dasharray="628"
+                stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="scan-ring-inner">
+              <div id="reader"></div>
+            </div>
+            <div class="scan-time" id="scan-time">20</div>
+          </div>
+          <input type="range" id="scan-zoom" class="hidden" style="width:100%; max-width:280px; margin-top:16px;"
+            min="1" max="5" step="0.1" value="1">
+          <p class="text-dim" style="margin-top:14px;">Point the camera at the projected QR code.</p>
+        </div>
+
+        <div id="scan-success-state" class="hidden stack" style="align-items:center;">
+          <div class="stamp">✓</div>
+          <p style="font-weight:600; font-size:1.05rem;">Attendance marked</p>
+        </div>
+
+        <div id="scan-fail-state" class="hidden stack" style="align-items:center;">
+          <div class="screen-icon">⚠️</div>
+          <p style="font-weight:600;" id="scan-fail-text">Couldn't mark attendance.</p>
+        </div>
+
+        <button class="btn btn-ghost" id="btn-scan-cancel"
+          style="width:auto; padding-inline:22px; margin-top:10px;">Close</button>
+      </div>
     </div>
+
   </div>
 
-  <!-- ============ SCAN OVERLAY ============ -->
-  <div class="screen" id="screen-scan" style="position:fixed; inset:0; background:var(--ink-950); z-index:40; max-width:none;">
-    <div style="max-width:480px; margin:0 auto; width:100%; padding:24px; display:flex; flex-direction:column; align-items:center; gap:18px; text-align:center;">
-      <h2 id="scan-course-title" style="font-size:1.1rem;">—</h2>
-
-      <div id="scan-verify-state">
-        <p class="subtitle">Waiting on fingerprint check…</p>
-      </div>
-
-      <div id="scan-camera-state" class="hidden">
-        <div class="scan-ring">
-          <svg viewBox="0 0 220 220">
-            <circle class="scan-ring-track" cx="110" cy="110" r="100"></circle>
-            <circle class="scan-ring-value" id="scan-ring-value" cx="110" cy="110" r="100" stroke-dasharray="628" stroke-dashoffset="0"></circle>
-          </svg>
-          <div class="scan-ring-inner"><div id="reader"></div></div>
-          <div class="scan-time" id="scan-time">20</div>
-        </div>
-        <p class="text-dim" style="margin-top:14px;">Point the camera at the projected QR code.</p>
-      </div>
-
-      <div id="scan-success-state" class="hidden stack" style="align-items:center;">
-        <div class="stamp">✓</div>
-        <p style="font-weight:600; font-size:1.05rem;">Attendance marked</p>
-      </div>
-
-      <div id="scan-fail-state" class="hidden stack" style="align-items:center;">
-        <div class="screen-icon">⚠️</div>
-        <p style="font-weight:600;" id="scan-fail-text">Couldn't mark attendance.</p>
-      </div>
-
-      <button class="btn btn-ghost" id="btn-scan-cancel" style="width:auto; padding-inline:22px; margin-top:10px;">Close</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- ============ ADD COURSE SHEET ============ -->
-<div class="sheet-backdrop" id="sheet-add-course">
-  <div class="sheet">
-    <h3 style="margin-bottom:4px;">Add a course</h3>
-    <p class="text-dim" style="font-size:0.85rem; margin-bottom:16px;">Enter the course code your instructor shared.</p>
-    <div class="field"><input class="input input-paper" id="input-course-code" placeholder="e.g. CS201" autocomplete="off"></div>
-    <div class="btn-row">
-      <button class="btn btn-ghost-paper" id="btn-cancel-add-course">Cancel</button>
-      <button class="btn btn-primary" id="btn-confirm-add-course">Add course</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ EDIT PROFILE SHEET ============ -->
-<div class="sheet-backdrop" id="sheet-edit-profile">
-  <div class="sheet">
-    <h3 style="margin-bottom:4px;">Edit profile</h3>
-    <p class="text-dim" style="font-size:0.85rem; margin-bottom:16px;" id="edit-profile-hint">Verify your fingerprint to continue.</p>
-
-    <div id="edit-step-verify">
-      <button class="btn btn-primary" id="btn-edit-verify" style="margin-bottom:10px;">Verify fingerprint</button>
-      <button class="btn btn-ghost-paper" id="btn-cancel-edit-1">Cancel</button>
-    </div>
-
-    <div id="edit-step-form" class="hidden">
-      <div class="field"><label>Name</label><input class="input input-paper" id="input-edit-name"></div>
-      <div class="field"><label>Roll number</label><input class="input input-paper" id="input-edit-roll" style="text-transform:uppercase;"></div>
+  <!-- ============ ADD COURSE SHEET ============ -->
+  <div class="sheet-backdrop" id="sheet-add-course">
+    <div class="sheet">
+      <h3 style="margin-bottom:4px;">Add a course</h3>
+      <p class="text-dim" style="font-size:0.85rem; margin-bottom:16px;">Enter the course code your instructor shared.
+      </p>
+      <div class="field"><input class="input input-paper" id="input-course-code" placeholder="e.g. CS201"
+          autocomplete="off"></div>
       <div class="btn-row">
-        <button class="btn btn-ghost-paper" id="btn-cancel-edit-2">Cancel</button>
-        <button class="btn btn-primary" id="btn-save-edit">Save changes</button>
+        <button class="btn btn-ghost-paper" id="btn-cancel-add-course">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-add-course">Add course</button>
       </div>
     </div>
   </div>
-</div>
 
-<script src="shared.js"></script>
-<script src="attendance.js"></script>
+  <!-- ============ EDIT PROFILE SHEET ============ -->
+  <div class="sheet-backdrop" id="sheet-edit-profile">
+    <div class="sheet">
+      <h3 style="margin-bottom:4px;">Edit profile</h3>
+      <p class="text-dim" style="font-size:0.85rem; margin-bottom:16px;" id="edit-profile-hint">Verify your fingerprint
+        to continue.</p>
+
+      <div id="edit-step-verify">
+        <button class="btn btn-primary" id="btn-edit-verify" style="margin-bottom:10px;">Verify fingerprint</button>
+        <button class="btn btn-ghost-paper" id="btn-cancel-edit-1">Cancel</button>
+      </div>
+
+      <div id="edit-step-form" class="hidden">
+        <div class="field"><label>Name</label><input class="input input-paper" id="input-edit-name"></div>
+        <div class="field"><label>Roll number</label><input class="input input-paper" id="input-edit-roll"
+            style="text-transform:uppercase;"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost-paper" id="btn-cancel-edit-2">Cancel</button>
+          <button class="btn btn-primary" id="btn-save-edit">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="attendance.js"></script>
 </body>
+
 </html>

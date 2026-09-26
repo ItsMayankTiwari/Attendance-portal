@@ -1,144 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Attendance — Instructor Console</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Attendance — Instructor Console</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
+
 <body>
 
-<!-- ============ SIGN IN ============ -->
-<div class="screen is-active" id="screen-auth" style="max-width:none;">
-  <div class="screen-icon">🖋️</div>
-  <div>
-    <h1 class="eyebrow-free-title">Instructor Console</h1>
-    <p class="subtitle">Sign in with your authorised institute account.</p>
-  </div>
-  <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px;">Sign in with Google</button>
-  <p class="text-dim" id="auth-status" style="font-size:0.82rem;"></p>
-</div>
-
-<!-- ============ CONSOLE SHELL ============ -->
-<div class="teacher-shell hidden" id="shell">
-  <div class="navrail">
-    <div class="brand" style="padding:8px 12px 18px;"><span class="brand-mark">R</span> The Register</div>
-    <button class="navrail-item is-active" data-view="overview">📋 Roster & overview</button>
-    <button class="navrail-item" data-view="grid">🗓️ Lecture grid</button>
-    <button class="navrail-item" data-view="live">📡 Live session</button>
-    <button class="navrail-item" data-view="courses">➕ Manage courses</button>
-    <div style="flex:1;"></div>
-    <div style="padding:10px 12px; font-size:0.78rem; color:var(--ink-text-dim);" id="user-badge"></div>
-    <button class="navrail-item" id="btn-logout">↩ Sign out</button>
+  <!-- ============ SIGN IN ============ -->
+  <div class="screen is-active" id="screen-auth" style="max-width:none;">
+    <div class="screen-icon">🖋️</div>
+    <div>
+      <h1 class="eyebrow-free-title">Instructor Console</h1>
+      <p class="subtitle">Sign in with your authorised institute account.</p>
+    </div>
+    <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px;">Sign in with
+      Google</button>
+    <p class="text-dim" id="auth-status" style="font-size:0.82rem;"></p>
   </div>
 
-  <div class="teacher-main">
-    <div class="spread" style="margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-      <h1 class="eyebrow-free-title" id="page-title">Roster &amp; overview</h1>
-      <select class="input" id="course-select" style="width:auto; min-width:220px;"></select>
+  <!-- ============ CONSOLE SHELL ============ -->
+  <div class="teacher-shell hidden" id="shell">
+    <div class="navrail">
+      <div class="brand" style="padding:8px 12px 18px;"><span class="brand-mark">A</span> Attendance</div>
+      <button class="navrail-item is-active" data-view="overview">📋 Class Overview</button>
+      <button class="navrail-item" data-view="grid">🗓️ Attendance Sheet</button>
+      <button class="navrail-item" data-view="live">📡 Live session</button>
+      <button class="navrail-item" data-view="courses">➕ Manage courses</button>
+      <div style="flex:1;"></div>
+      <div style="padding:10px 12px; font-size:0.78rem; color:var(--ink-text-dim);" id="user-badge"></div>
+      <button class="navrail-item" id="btn-logout">↩ Sign out</button>
     </div>
 
-    <!-- ---- OVERVIEW ---- -->
-    <div class="teacher-view is-active" id="tview-overview">
-      <div id="overview-empty" class="ledger hidden"><div class="empty-state"><div class="empty-icon">🗂️</div><p>Select or create a course to see its roster.</p></div></div>
+    <div class="teacher-main">
+      <div class="spread" style="margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+        <h1 class="eyebrow-free-title" id="page-title">Class Overview</h1>
+        <select class="input" id="course-select" style="width:auto; min-width:220px;"></select>
+      </div>
 
-      <div id="overview-content" class="hidden">
-        <div class="ledger" style="margin-bottom:18px;">
-          <div class="ledger-head"><h3>Snapshot</h3><span class="meta" id="overview-session-count">0 lectures held</span></div>
-          <div class="ledger-body" style="display:flex; gap:28px; flex-wrap:wrap; align-items:center;">
-            <div id="overview-donut"></div>
-            <div class="stack" style="gap:6px;">
-              <div style="font-size:1.4rem; font-weight:600; font-family:var(--font-mono);" id="overview-avg">—</div>
-              <div class="text-dim" style="font-size:0.82rem;">average attendance</div>
-            </div>
-            <div class="stack" style="gap:6px;">
-              <div style="font-size:1.4rem; font-weight:600; font-family:var(--font-mono);" id="overview-at-risk-count">—</div>
-              <div class="text-dim" style="font-size:0.82rem;">students below 75%</div>
-            </div>
+      <!-- ---- OVERVIEW ---- -->
+      <div class="teacher-view is-active" id="tview-overview">
+        <div id="overview-empty" class="ledger hidden">
+          <div class="empty-state">
+            <div class="empty-icon">🗂️</div>
+            <p>Select or create a course to see its attendance.</p>
           </div>
         </div>
 
-        <div class="ledger" id="at-risk-panel" style="margin-bottom:18px;"></div>
+        <div id="overview-content" class="hidden">
+          <div class="ledger" style="margin-bottom:18px;">
+            <div class="ledger-head">
+              <h3>Snapshot</h3><span class="meta" id="overview-session-count">0 lectures held</span>
+            </div>
+            <div class="ledger-body" style="display:flex; gap:28px; flex-wrap:wrap; align-items:center;">
+              <div id="overview-donut"></div>
+              <div class="stack" style="gap:6px;">
+                <div style="font-size:1.4rem; font-weight:600; font-family:var(--font-mono);" id="overview-avg">—</div>
+                <div class="text-dim" style="font-size:0.82rem;">average attendance</div>
+              </div>
+              <div class="stack" style="gap:6px;">
+                <div style="font-size:1.4rem; font-weight:600; font-family:var(--font-mono);"
+                  id="overview-at-risk-count">—</div>
+                <div class="text-dim" style="font-size:0.82rem;">students below 75%</div>
+              </div>
+            </div>
+          </div>
 
-        <div class="ledger">
+          <div class="ledger" id="at-risk-panel" style="margin-bottom:18px;"></div>
+
+          <div class="ledger">
+            <div class="ledger-head">
+              <h3>All students</h3>
+              <button class="link-btn" id="btn-export-csv">Export CSV</button>
+            </div>
+            <div class="ledger-body">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th class="num">Classes</th>
+                    <th class="num">%</th>
+                  </tr>
+                </thead>
+                <tbody id="roster-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- ATTENDANCE SHEET ---- -->
+      <div class="teacher-view" id="tview-grid">
+        <div id="grid-empty" class="ledger hidden">
+          <div class="empty-state">
+            <div class="empty-icon">🗓️</div>
+            <p>No lectures recorded for this course yet.</p>
+          </div>
+        </div>
+        <div class="ledger hidden" id="grid-content">
+          <div class="ledger-body grid-scroll" style="padding:16px;">
+            <table class="grid-table" id="lecture-grid-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- LIVE SESSION ---- -->
+      <div class="teacher-view" id="tview-live">
+        <div id="live-idle" class="ledger">
+          <div class="ledger-body" style="padding:24px; text-align:center;">
+            <p class="text-dim" style="margin-bottom:16px;">Start a session to project a rotating QR code for this
+              course.</p>
+            <button class="btn btn-primary" id="btn-start-session" style="width:auto; padding-inline:22px;">Start live
+              session</button>
+          </div>
+        </div>
+
+        <div id="live-active" class="hidden">
+          <div class="qr-stage" style="margin-bottom:18px;">
+            <div class="qr-frame">
+              <svg class="qr-ring-svg" viewBox="0 0 260 260">
+                <circle class="qr-ring-track" cx="130" cy="130" r="122"></circle>
+                <circle class="qr-ring-value" id="qr-ring-value" cx="130" cy="130" r="122" stroke-dasharray="766"
+                  stroke-dashoffset="0"></circle>
+              </svg>
+              <div id="qr-box"></div>
+            </div>
+            <p class="text-dim" style="font-size:0.85rem;">Refreshes every 6 seconds — project this for the room.</p>
+          </div>
+
+          <div class="spread" style="margin-bottom:14px;">
+            <div class="counter-tile"><span class="num" id="live-count">0</span><span class="text-dim"
+                style="font-size:0.85rem;">marked present</span></div>
+            <button class="btn btn-danger" id="btn-end-session" style="width:auto; padding-inline:18px;">End
+              session</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- COURSES ---- -->
+      <div class="teacher-view" id="tview-courses">
+        <div class="ledger" style="margin-bottom:18px;">
           <div class="ledger-head">
-            <h3>Full roster</h3>
-            <button class="link-btn" id="btn-export-csv">Export CSV</button>
+            <h3>Create a course</h3>
           </div>
           <div class="ledger-body">
-            <table class="data-table">
-              <thead><tr><th>Student</th><th class="num">Classes</th><th class="num">%</th></tr></thead>
-              <tbody id="roster-table-body"></tbody>
-            </table>
+            <div class="field"><input class="input input-paper" id="input-new-code"
+                placeholder="Course code, e.g. CS201"></div>
+            <div class="field"><input class="input input-paper" id="input-new-name"
+                placeholder="Course name, e.g. Data Structures"></div>
+            <button class="btn btn-primary" id="btn-create-course" style="width:auto; padding-inline:20px;">Create
+              course</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ---- LECTURE GRID ---- -->
-    <div class="teacher-view" id="tview-grid">
-      <div id="grid-empty" class="ledger hidden"><div class="empty-state"><div class="empty-icon">🗓️</div><p>No lectures recorded for this course yet.</p></div></div>
-      <div class="ledger hidden" id="grid-content">
-        <div class="ledger-body grid-scroll" style="padding:16px;">
-          <table class="grid-table" id="lecture-grid-table"></table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ---- LIVE SESSION ---- -->
-    <div class="teacher-view" id="tview-live">
-      <div id="live-idle" class="ledger">
-        <div class="ledger-body" style="padding:24px; text-align:center;">
-          <p class="text-dim" style="margin-bottom:16px;">Start a session to project a rotating QR code for this course.</p>
-          <button class="btn btn-primary" id="btn-start-session" style="width:auto; padding-inline:22px;">Start live session</button>
-        </div>
-      </div>
-
-      <div id="live-active" class="hidden">
-        <div class="qr-stage" style="margin-bottom:18px;">
-          <div class="qr-frame">
-            <svg class="qr-ring-svg" viewBox="0 0 260 260">
-              <circle class="qr-ring-track" cx="130" cy="130" r="122"></circle>
-              <circle class="qr-ring-value" id="qr-ring-value" cx="130" cy="130" r="122" stroke-dasharray="766" stroke-dashoffset="0"></circle>
-            </svg>
-            <div id="qr-box"></div>
-          </div>
-          <p class="text-dim" style="font-size:0.85rem;">Refreshes every 6 seconds — project this for the room.</p>
-        </div>
-
-        <div class="spread" style="margin-bottom:14px;">
-          <div class="counter-tile"><span class="num" id="live-count">0</span><span class="text-dim" style="font-size:0.85rem;">marked present</span></div>
-          <button class="btn btn-danger" id="btn-end-session" style="width:auto; padding-inline:18px;">End session</button>
-        </div>
-
         <div class="ledger">
-          <div class="ledger-head"><h3>Live roster</h3></div>
-          <div class="ledger-body--flush" id="live-roster-list"></div>
+          <div class="ledger-head">
+            <h3>Your courses</h3>
+          </div>
+          <div class="ledger-body--flush" id="courses-manage-list"></div>
         </div>
-      </div>
-    </div>
-
-    <!-- ---- COURSES ---- -->
-    <div class="teacher-view" id="tview-courses">
-      <div class="ledger" style="margin-bottom:18px;">
-        <div class="ledger-head"><h3>Create a course</h3></div>
-        <div class="ledger-body">
-          <div class="field"><input class="input input-paper" id="input-new-code" placeholder="Course code, e.g. CS201"></div>
-          <div class="field"><input class="input input-paper" id="input-new-name" placeholder="Course name, e.g. Data Structures"></div>
-          <button class="btn btn-primary" id="btn-create-course" style="width:auto; padding-inline:20px;">Create course</button>
-        </div>
-      </div>
-      <div class="ledger">
-        <div class="ledger-head"><h3>Your courses</h3></div>
-        <div class="ledger-body--flush" id="courses-manage-list"></div>
       </div>
     </div>
   </div>
-</div>
 
-<script src="shared.js"></script>
-<script src="teacher.js"></script>
+  <script src="shared.js"></script>
+  <script src="teacher.js"></script>
 </body>
+
 </html>

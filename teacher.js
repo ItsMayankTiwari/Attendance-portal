@@ -67,7 +67,7 @@ function populateCourseSelect() {
   };
 }
 
-function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 
 // ---------------------------------------------------------------- nav
 
@@ -75,7 +75,7 @@ document.querySelectorAll('.navrail-item[data-view]').forEach(btn => {
   btn.onclick = () => switchView(btn.dataset.view);
 });
 
-const titles = { overview: 'Roster & overview', grid: 'Lecture grid', live: 'Live session', courses: 'Manage courses' };
+const titles = { overview: 'Class Overview', grid: 'Attendance Sheet', live: 'Live session', courses: 'Manage courses' };
 
 function switchView(name) {
   document.querySelectorAll('.navrail-item[data-view]').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
@@ -251,7 +251,6 @@ document.getElementById('btn-start-session').onclick = async () => {
     rotationSeconds = data.rotation_seconds || 6;
 
     document.getElementById('live-count').textContent = '0';
-    document.getElementById('live-roster-list').innerHTML = '';
     renderLiveView();
 
     await refreshQr();
@@ -265,7 +264,7 @@ async function refreshQr() {
   const payload = await currentQrPayload(activeSessionId, sessionSecret, rotationSeconds);
   const box = document.getElementById('qr-box');
   box.innerHTML = '';
-  liveQrCodeInstance = new QRCode(box, { text: payload, width: 240, height: 240, colorDark: '#14122a', colorLight: '#f6f1e4' });
+  liveQrCodeInstance = new QRCode(box, { text: payload, width: 340, height: 340, colorDark: '#14122a', colorLight: '#f6f1e4' });
 
   const ring = document.getElementById('qr-ring-value');
   ring.style.transition = 'none';
@@ -284,15 +283,6 @@ async function refreshLiveRoster() {
   try {
     const records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
     document.getElementById('live-count').textContent = records.length;
-    const list = document.getElementById('live-roster-list');
-    list.innerHTML = records.length ? records.map(r => `
-      <div class="ledger-row" style="cursor:default;">
-        <div class="ledger-row-main">
-          <div class="ledger-row-title">${escapeHtml(r.students.name)}</div>
-          <div class="ledger-row-sub mono">${escapeHtml(r.students.roll_number)}</div>
-        </div>
-        <span class="mono text-dim" style="font-size:0.8rem;">${formatTime(r.marked_at)}</span>
-      </div>`).join('') : `<div class="empty-state"><p>No one has scanned in yet.</p></div>`;
   } catch (err) { /* transient poll errors are not worth interrupting the session for */ }
 }
 

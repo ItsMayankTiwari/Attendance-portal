@@ -238,10 +238,13 @@ async function startAttendance(courseId, courseName) {
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
     { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 220, height: 220 } },
+    { fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
+        return { width: edge, height: edge };
+      } },
     async (decodedText) => {
       clearScanCountdown();
-      try { await html5QrCode.stop(); } catch (e) {}
+      safeStopScanner();
       document.getElementById('scan-camera-state').classList.add('hidden');
 
       try {
@@ -256,12 +259,41 @@ async function startAttendance(courseId, courseName) {
       }
     },
     () => {}
-  ).catch(() => {
+  ).then(() => {
+    enableZoomControlIfSupported();
+  }).catch(() => {
     toast('Could not access the camera.', 'error');
     closeScan();
   });
 }
 
+// html5-qrcode's stop() throws synchronously (not just a rejected promise)
+// if the scanner isn't currently running — calling it a second time (e.g.
+// once from the decode/timeout handler, then again from Close) was leaving
+// closeScan() half-finished, which is why Close could appear to do nothing.
+function safeStopScanner() {
+  if (!html5QrCode) return;
+  try {
+    const result = html5QrCode.stop();
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch (e) { /* already stopped — nothing to do */ }
+  html5QrCode = null;
+}
+
+// Optional: expose a zoom slider when the device camera reports zoom support.
+// Silently does nothing on devices/browsers that don't support it.
+function enableZoomControlIfSupported() {
+  try {
+    const capabilities = html5QrCode.getRunningTrackCameraCapabilities();
+    const zoom = capabilities.zoomFeature ? capabilities.zoomFeature() : null;
+    const slider = document.getElementById('scan-zoom');
+    if (!zoom || !zoom.isSupported() || !slider) { if (slider) slider.classList.add('hidden'); return; }
+    slider.min = zoom.min(); slider.max = zoom.max(); slider.step = zoom.step() || 0.1;
+    slider.value = zoom.value();
+    slider.classList.remove('hidden');
+    slider.oninput = () => zoom.apply(parseFloat(slider.value));
+  } catch (e) { /* zoom API unavailable on this browser/version — fine to skip */ }
+}
 // mark-attendance uses a short-lived fingerprint token instead of the Google
 // session, so it does not need the Authorization header.
 async function authedFetchNoAuth(path, body) {
@@ -288,7 +320,7 @@ function beginScanCountdown(seconds) {
     timeEl.textContent = Math.max(remaining, 0);
     if (remaining <= 0) {
       clearScanCountdown();
-      if (html5QrCode) html5QrCode.stop().catch(() => {});
+      safeStopScanner();
       document.getElementById('scan-camera-state').classList.add('hidden');
       document.getElementById('scan-fail-text').textContent = 'Time ran out. Tap the course again to retry.';
       document.getElementById('scan-fail-state').classList.remove('hidden');
@@ -299,7 +331,7 @@ function clearScanCountdown() { clearInterval(scanTimer); scanTimer = null; }
 
 function closeScan() {
   clearScanCountdown();
-  if (html5QrCode) { html5QrCode.stop().catch(() => {}); html5QrCode = null; }
+  safeStopScanner();
   document.getElementById('shell').classList.remove('hidden');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('is-active'));
 }
