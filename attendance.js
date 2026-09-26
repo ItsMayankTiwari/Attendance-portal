@@ -271,8 +271,9 @@ async function startAttendance(courseId, courseName) {
     () => { }
   ).then(() => {
     enablePinchToZoom();
-  }).catch(() => {
-    toast('Could not access the camera.', 'error');
+  }).catch((err) => {
+    // Show the actual error message coming from the phone's browser
+    toast('Camera error: ' + (err.name || err.message || err), 'error');
     closeScan();
   });
 }
