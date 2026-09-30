@@ -74,7 +74,21 @@ document.getElementById('btn-register-device').onclick = async () => {
   const status = document.getElementById('setup-status');
   status.textContent = 'Talking to your device…';
   try {
-    const options = await authedFetch('/api/register-options', { method: 'POST' });
+    let options;
+    try {
+      options = await authedFetch('/api/register-options', { method: 'POST' });
+    } catch (err) {
+      if (!err.needs_reset_verification) throw err;
+      status.textContent = 'A device is already registered — verify it to replace it…';
+      const stepUpOptions = await authedFetch('/api/edit-auth-options', { method: 'POST' });
+      const stepUpAssertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: stepUpOptions });
+      const { edit_token } = await authedFetch('/api/edit-auth-verify', {
+        method: 'POST',
+        body: JSON.stringify({ response: stepUpAssertion, purpose: 'reset_device' })
+      });
+      status.textContent = 'Verified — set up the new device…';
+      options = await authedFetch('/api/register-options', { method: 'POST', body: JSON.stringify({ reset_token: edit_token }) });
+    }
     const assertion = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
     await authedFetch('/api/register-verify', { method: 'POST', body: JSON.stringify({ response: assertion }) });
     await bootDashboard();
@@ -216,37 +230,18 @@ document.getElementById('btn-confirm-add-course').onclick = async () => {
 
 async function startAttendance(courseId, courseName) {
   document.getElementById('scan-course-title').textContent = courseName;
-  document.getElementById('scan-verify-state').classList.remove('hidden');
-  document.getElementById('scan-camera-state').classList.add('hidden');
-  document.getElementById('scan-time-wrap').classList.add('hidden');
-  document.getElementById('scan-hint').classList.add('hidden');
-  document.getElementById('scan-success-state').classList.add('hidden');
-  document.getElementById('scan-fail-state').classList.add('hidden');
-  show('screen-scan');
-
-  let options, assertion, verification;
-  try {
-    options = await authedFetch('/api/attendance-options', { method: 'POST' });
-    assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
-    verification = await authedFetch('/api/attendance-verify', { method: 'POST', body: JSON.stringify({ response: assertion }) });
-  } catch (err) {
-    closeScan();
-    toast(err.message || 'Fingerprint check cancelled.', 'error');
-    return;
-  }
-
   document.getElementById('scan-verify-state').classList.add('hidden');
   document.getElementById('scan-camera-state').classList.remove('hidden');
   document.getElementById('scan-time-wrap').classList.remove('hidden');
   document.getElementById('scan-hint').classList.remove('hidden');
+  document.getElementById('scan-success-state').classList.add('hidden');
+  document.getElementById('scan-fail-state').classList.add('hidden');
+  show('screen-scan');
+
   beginScanCountdown(20);
 
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
-    // Must have exactly ONE key — this is just camera selection.
-    // { exact: 'environment' } forces the back camera; if a device has
-    // no back camera this will reject rather than silently falling back
-    // to the front one, which is what we want on a mobile-only app.
     { facingMode: { exact: 'environment' } },
     {
       fps: 10,
@@ -254,7 +249,6 @@ async function startAttendance(courseId, courseName) {
         const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
         return { width: edge, height: edge };
       },
-      // Resolution/quality constraints go HERE, not in the first argument.
       videoConstraints: {
         facingMode: { exact: 'environment' },
         width: { min: 720, ideal: 1920 },
@@ -267,15 +261,20 @@ async function startAttendance(courseId, courseName) {
       document.getElementById('scan-camera-state').classList.add('hidden');
       document.getElementById('scan-time-wrap').classList.add('hidden');
       document.getElementById('scan-hint').classList.add('hidden');
+      document.getElementById('scan-verify-state').classList.remove('hidden');
 
       try {
-        await authedFetchNoAuth('/api/mark-attendance', { auth_token: verification.token, qr_payload: decodedText });
+        const options = await authedFetch('/api/attendance-options', { method: 'POST', body: JSON.stringify({ qr_payload: decodedText }) });
+        const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
+        await authedFetch('/api/mark-attendance', { method: 'POST', body: JSON.stringify({ response: assertion, qr_payload: decodedText }) });
+        document.getElementById('scan-verify-state').classList.add('hidden');
         document.getElementById('scan-success-state').classList.remove('hidden');
         await loadRecords();
         renderHome();
         renderRecordsList();
       } catch (err) {
-        document.getElementById('scan-fail-text').textContent = err.message;
+        document.getElementById('scan-verify-state').classList.add('hidden');
+        document.getElementById('scan-fail-text').textContent = err.message || 'Could not mark attendance.';
         document.getElementById('scan-fail-state').classList.remove('hidden');
       }
     },
@@ -283,7 +282,6 @@ async function startAttendance(courseId, courseName) {
   ).then(() => {
     enablePinchToZoom();
   }).catch((err) => {
-    // Show the actual error message coming from the phone's browser
     toast('Camera error: ' + (err.name || err.message || err), 'error');
     closeScan();
   });
@@ -345,16 +343,6 @@ function disablePinchToZoom() {
   const reader = document.getElementById('reader');
   if (reader) { reader.ontouchstart = null; reader.ontouchmove = null; reader.ontouchend = null; }
   pinchState = null;
-}
-
-// mark-attendance uses a short-lived fingerprint token instead of the Google
-// session, so it does not need the Authorization header.
-async function authedFetchNoAuth(path, body) {
-  const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const raw = await res.text();
-  let data; try { data = raw ? JSON.parse(raw) : {}; } catch (e) { throw new Error(`Server error (${res.status}).`); }
-  if (!res.ok) throw new Error(data.error || 'Could not mark attendance.');
-  return data;
 }
 
 function beginScanCountdown(seconds) {
