@@ -65,7 +65,11 @@ async function authedFetch(path, opts = {}) {
   try { data = raw ? JSON.parse(raw) : {}; }
   catch (e) { throw new Error(`Server error (${res.status}). Try again in a moment.`); }
 
-  if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+  if (!res.ok) {
+    const err = new Error(data.error || 'Something went wrong.');
+    Object.assign(err, data);
+    throw err;
+  }
   return data;
 }
 

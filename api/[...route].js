@@ -1,5 +1,4 @@
 import attendanceOptions from '../lib/attendance-options.js';
-import attendanceVerify from '../lib/attendance-verify.js';
 import editAuthOptions from '../lib/edit-auth-options.js';
 import editAuthVerify from '../lib/edit-auth-verify.js';
 import endSession from '../lib/end-session.js';
@@ -17,7 +16,6 @@ import teacherRecords from '../lib/teacher-records.js';
 const routes = {
   'teacher-courses': teacherCourses,
   'attendance-options': attendanceOptions,
-  'attendance-verify': attendanceVerify,
   'edit-auth-options': editAuthOptions,
   'edit-auth-verify': editAuthVerify,
   'end-session': endSession,
