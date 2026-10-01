@@ -150,7 +150,25 @@ function renderOverview() {
       <td><strong>${escapeHtml(s.roll_number)}</strong><br><span class="text-dim" style="font-size:0.78rem;">${escapeHtml(s.name)}</span></td>
       <td class="num">${s.attended_classes}/${s.total_classes}</td>
       <td class="num"><span class="badge ${s.percentage < 75 ? 'badge-warn' : 'badge-verified'}">${s.percentage}%</span></td>
-    </tr>`).join('') || `<tr><td colspan="3" class="text-dim" style="text-align:center; padding:20px;">No students enrolled yet.</td></tr>`;
+      <td class="num"><button class="link-btn" data-remove-student="${escapeHtml(s.roll_number)}" style="color:var(--absent-strong);">Remove</button></td>
+    </tr>`).join('') || `<tr><td colspan="4" class="text-dim" style="text-align:center; padding:20px;">No students enrolled yet.</td></tr>`;
+
+  document.getElementById('roster-table-body').querySelectorAll('[data-remove-student]').forEach(btn => {
+    btn.onclick = async () => {
+      const roll_number = btn.dataset.removeStudent;
+      const ok = await confirmSheet({
+        title: 'Remove this student?',
+        body: `${roll_number} will be unenrolled from this course. Their past attendance records are kept.`,
+        confirmLabel: 'Remove', danger: true
+      });
+      if (!ok) return;
+      try {
+        await authedFetch('/api/remove-enrollment', { method: 'POST', body: JSON.stringify({ course_id: selectedCourseId, roll_number }) });
+        toast('Student removed from course.', 'success');
+        await loadCourseData();
+      } catch (err) { toast(err.message, 'error'); }
+    };
+  });
 }
 
 document.getElementById('btn-export-csv').onclick = () => {
@@ -167,6 +185,26 @@ document.getElementById('btn-export-csv').onclick = () => {
   URL.revokeObjectURL(a.href);
 };
 
+document.getElementById('btn-grid-mark').onclick = () => submitManualAttendance('add');
+document.getElementById('btn-grid-unmark').onclick = () => submitManualAttendance('remove');
+
+async function submitManualAttendance(action) {
+  const session_id = document.getElementById('grid-session-select').value;
+  const input = document.getElementById('grid-manual-roll');
+  const roll_number = input.value.trim();
+  if (!session_id) { toast('No lecture selected.', 'error'); return; }
+  if (!roll_number) { toast('Enter a roll number.', 'error'); return; }
+  try {
+    const data = await authedFetch('/api/add-attendance-manual', {
+      method: 'POST',
+      body: JSON.stringify({ session_id, roll_number, action })
+    });
+    toast(action === 'remove' ? `${data.name} removed from this lecture.` : `${data.name} marked present.`, 'success');
+    input.value = '';
+    await loadCourseData();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
 // ---------------------------------------------------------------- lecture grid
 
 function renderGrid() {
@@ -180,6 +218,10 @@ function renderGrid() {
   document.getElementById('grid-content').classList.remove('hidden');
 
   const sorted = sessions.slice().sort((a, b) => new Date(a.session_date) - new Date(b.session_date));
+  const sel = document.getElementById('grid-session-select');
+  const mostRecentFirst = sorted.slice().reverse();
+  sel.innerHTML = mostRecentFirst.map(s => `<option value="${s.id}">${formatDate(s.session_date)}</option>`).join('');
+
   const head = `<thead><tr><th>Student</th>${sorted.map(s => `<th>${formatDate(s.session_date).slice(0, 6)}</th>`).join('')}</tr></thead>`;
   const body = `<tbody>` + stats.slice().sort((a, b) => a.roll_number.localeCompare(b.roll_number)).map(s => {
     const present = new Set(s.present_session_ids || []);
@@ -354,22 +396,6 @@ document.getElementById('btn-end-session').onclick = async () => {
   activeSessionId = null; sessionSecret = null;
   renderLiveView();
   await loadCourseData();
-};
-
-document.getElementById('btn-add-manual').onclick = async () => {
-  const input = document.getElementById('input-manual-roll');
-  const roll_number = input.value.trim();
-  if (!roll_number) { toast('Enter a roll number.', 'error'); return; }
-  if (!activeSessionId) { toast('No active session.', 'error'); return; }
-  try {
-    const data = await authedFetch('/api/add-attendance-manual', {
-      method: 'POST',
-      body: JSON.stringify({ session_id: activeSessionId, roll_number })
-    });
-    toast(`${data.name} marked present.`, 'success');
-    input.value = '';
-    refreshLiveRoster();
-  } catch (err) { toast(err.message, 'error'); }
 };
 
 init();

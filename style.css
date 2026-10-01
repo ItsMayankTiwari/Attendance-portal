@@ -613,10 +613,12 @@ button.ledger-row:hover {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .manual-entry-row .field {
   flex: 1;
+  min-width: 140px;
   margin-bottom: 0;
 }
 
