@@ -210,12 +210,29 @@ document.getElementById('btn-create-course').onclick = async () => {
 function renderCoursesManageList() {
   const el = document.getElementById('courses-manage-list');
   el.innerHTML = courses.length ? courses.map(c => `
-    <div class="ledger-row" style="cursor:default;">
-      <div class="ledger-row-main">
-        <div class="ledger-row-title">${escapeHtml(c.course_name)}</div>
-        <div class="ledger-row-sub mono">${escapeHtml(c.course_code)} · ${c.user_role}</div>
+    <div class="ledger-row" style="cursor:default; flex-direction:column; align-items:stretch; gap:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="ledger-row-main">
+          <div class="ledger-row-title">${escapeHtml(c.course_name)}</div>
+          <div class="ledger-row-sub mono">${escapeHtml(c.course_code)} · ${c.user_role}</div>
+        </div>
+        ${c.user_role === 'INSTRUCTOR' ? `<button class="link-btn" data-del="${c.id}" style="color:var(--absent-strong);">Delete</button>` : ''}
       </div>
-      ${c.user_role === 'INSTRUCTOR' ? `<button class="link-btn" data-del="${c.id}" style="color:var(--absent-strong);">Delete</button>` : ''}
+      ${c.user_role === 'INSTRUCTOR' ? `
+        <div style="padding-left:2px;">
+          <div class="text-dim" style="font-size:0.78rem; margin-bottom:6px;">TAs</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+            ${(c.tas || []).map(ta => `
+              <span class="badge" style="display:inline-flex; align-items:center; gap:6px;">
+                ${escapeHtml(ta.email)}
+                <button class="link-btn" data-rm-ta="${c.id}|${escapeHtml(ta.email)}" style="color:var(--absent-strong); padding:0;">×</button>
+              </span>`).join('') || '<span class="text-dim" style="font-size:0.82rem;">None yet</span>'}
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input class="input input-paper" data-ta-input="${c.id}" placeholder="TA email" style="flex:1;">
+            <button class="btn btn-ghost-paper" data-add-ta="${c.id}" style="width:auto; padding-inline:14px;">Add TA</button>
+          </div>
+        </div>` : ''}
     </div>`).join('') : `<div class="empty-state"><p>No courses yet.</p></div>`;
 
   el.querySelectorAll('[data-del]').forEach(btn => {
@@ -238,6 +255,39 @@ function renderCoursesManageList() {
           if (selectedCourseId) document.getElementById('course-select').value = selectedCourseId;
           await loadCourseData();
         }
+      } catch (err) { toast(err.message, 'error'); }
+    };
+  });
+
+  el.querySelectorAll('[data-add-ta]').forEach(btn => {
+    btn.onclick = async () => {
+      const course_id = btn.dataset.addTa;
+      const input = el.querySelector(`[data-ta-input="${course_id}"]`);
+      const ta_email = input.value.trim();
+      if (!ta_email) { toast('Enter a TA email.', 'error'); return; }
+      try {
+        await authedFetch('/api/manage-ta', { method: 'POST', body: JSON.stringify({ action: 'add', course_id, ta_email }) });
+        toast('TA added.', 'success');
+        courses = await authedFetch('/api/teacher-courses');
+        renderCoursesManageList();
+      } catch (err) { toast(err.message, 'error'); }
+    };
+  });
+
+  el.querySelectorAll('[data-rm-ta]').forEach(btn => {
+    btn.onclick = async () => {
+      const [course_id, ta_email] = btn.dataset.rmTa.split('|');
+      const ok = await confirmSheet({
+        title: 'Remove this TA?',
+        body: `${ta_email} will no longer be able to run sessions for this course.`,
+        confirmLabel: 'Remove', danger: true
+      });
+      if (!ok) return;
+      try {
+        await authedFetch('/api/manage-ta', { method: 'POST', body: JSON.stringify({ action: 'remove', course_id, ta_email }) });
+        toast('TA removed.', 'success');
+        courses = await authedFetch('/api/teacher-courses');
+        renderCoursesManageList();
       } catch (err) { toast(err.message, 'error'); }
     };
   });
@@ -304,6 +354,22 @@ document.getElementById('btn-end-session').onclick = async () => {
   activeSessionId = null; sessionSecret = null;
   renderLiveView();
   await loadCourseData();
+};
+
+document.getElementById('btn-add-manual').onclick = async () => {
+  const input = document.getElementById('input-manual-roll');
+  const roll_number = input.value.trim();
+  if (!roll_number) { toast('Enter a roll number.', 'error'); return; }
+  if (!activeSessionId) { toast('No active session.', 'error'); return; }
+  try {
+    const data = await authedFetch('/api/add-attendance-manual', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: activeSessionId, roll_number })
+    });
+    toast(`${data.name} marked present.`, 'success');
+    input.value = '';
+    refreshLiveRoster();
+  } catch (err) { toast(err.message, 'error'); }
 };
 
 init();

@@ -12,6 +12,8 @@ import teacherCourses from '../lib/teacher-courses.js';
 import studentData from '../lib/student-data.js';
 import studentRecords from '../lib/student-records.js';
 import teacherRecords from '../lib/teacher-records.js';
+import manageTa from '../lib/manage-ta.js';
+import addAttendanceManual from '../lib/add-attendance-manual.js';
 
 const routes = {
   'teacher-courses': teacherCourses,
@@ -27,7 +29,9 @@ const routes = {
   'update-profile': updateProfile,
   'student-data': studentData,
   'student-records': studentRecords,
-  'teacher-records': teacherRecords
+  'teacher-records': teacherRecords,
+  'manage-ta': manageTa,
+  'add-attendance-manual': addAttendanceManual
 };
 
 export default async function handler(req, res) {
