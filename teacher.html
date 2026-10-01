@@ -90,6 +90,7 @@
                     <th>Student</th>
                     <th class="num">Classes</th>
                     <th class="num">%</th>
+                    <th class="num"></th>
                   </tr>
                 </thead>
                 <tbody id="roster-table-body"></tbody>
@@ -108,6 +109,22 @@
           </div>
         </div>
         <div class="ledger hidden" id="grid-content">
+          <div class="ledger-head">
+            <h3>Edit attendance by roll number</h3>
+            <span class="meta">Works for ended sessions too</span>
+          </div>
+          <div class="ledger-body manual-entry-row">
+            <div class="field">
+              <select class="input input-paper" id="grid-session-select"></select>
+            </div>
+            <div class="field">
+              <input class="input input-paper" id="grid-manual-roll" placeholder="Roll number">
+            </div>
+            <button class="btn btn-primary" id="btn-grid-mark" style="width:auto; padding-inline:14px;">Mark
+              present</button>
+            <button class="btn btn-ghost-paper" id="btn-grid-unmark"
+              style="width:auto; padding-inline:14px;">Remove</button>
+          </div>
           <div class="ledger-body grid-scroll" style="padding:16px;">
             <table class="grid-table" id="lecture-grid-table"></table>
           </div>
@@ -140,17 +157,6 @@
               session</button>
           </div>
 
-          <div class="ledger" style="margin-top:4px;">
-            <div class="ledger-head">
-              <h3>Add attendance by roll number</h3>
-            </div>
-            <div class="ledger-body manual-entry-row">
-              <div class="field">
-                <input class="input input-paper" id="input-manual-roll" placeholder="e.g. B21CS045">
-              </div>
-              <button class="btn btn-primary" id="btn-add-manual" style="width:auto; padding-inline:18px;">Add</button>
-            </div>
-          </div>
         </div>
       </div>
 
