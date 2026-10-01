@@ -210,8 +210,8 @@ document.getElementById('btn-create-course').onclick = async () => {
 function renderCoursesManageList() {
   const el = document.getElementById('courses-manage-list');
   el.innerHTML = courses.length ? courses.map(c => `
-    <div class="ledger-row" style="cursor:default; flex-direction:column; align-items:stretch; gap:10px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="ledger-row ledger-row--stack">
+      <div class="spread">
         <div class="ledger-row-main">
           <div class="ledger-row-title">${escapeHtml(c.course_name)}</div>
           <div class="ledger-row-sub mono">${escapeHtml(c.course_code)} · ${c.user_role}</div>
@@ -219,17 +219,17 @@ function renderCoursesManageList() {
         ${c.user_role === 'INSTRUCTOR' ? `<button class="link-btn" data-del="${c.id}" style="color:var(--absent-strong);">Delete</button>` : ''}
       </div>
       ${c.user_role === 'INSTRUCTOR' ? `
-        <div style="padding-left:2px;">
-          <div class="text-dim" style="font-size:0.78rem; margin-bottom:6px;">TAs</div>
-          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+        <div>
+          <div class="ta-manage-label">TAs</div>
+          <div class="ta-chip-row">
             ${(c.tas || []).map(ta => `
-              <span class="badge" style="display:inline-flex; align-items:center; gap:6px;">
+              <span class="ta-chip">
                 ${escapeHtml(ta.email)}
-                <button class="link-btn" data-rm-ta="${c.id}|${escapeHtml(ta.email)}" style="color:var(--absent-strong); padding:0;">×</button>
+                <button class="ta-chip-remove" data-rm-ta="${c.id}|${escapeHtml(ta.email)}">×</button>
               </span>`).join('') || '<span class="text-dim" style="font-size:0.82rem;">None yet</span>'}
           </div>
-          <div style="display:flex; gap:8px;">
-            <input class="input input-paper" data-ta-input="${c.id}" placeholder="TA email" style="flex:1;">
+          <div class="ta-add-row">
+            <input class="input input-paper" data-ta-input="${c.id}" placeholder="TA email">
             <button class="btn btn-ghost-paper" data-add-ta="${c.id}" style="width:auto; padding-inline:14px;">Add TA</button>
           </div>
         </div>` : ''}

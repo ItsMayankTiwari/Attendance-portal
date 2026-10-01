@@ -545,6 +545,81 @@ button.ledger-row:hover {
   color: var(--paper-text-dim);
 }
 
+/* -------------------------------------------------------------------------
+   Course staff (TAs)
+   ------------------------------------------------------------------------- */
+
+.ledger-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  cursor: default;
+}
+
+.ta-manage-label {
+  font-size: 0.78rem;
+  color: var(--paper-text-dim);
+  margin-bottom: 6px;
+}
+
+.ta-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: var(--paper-dim);
+  color: var(--paper-text);
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+}
+
+.ta-chip-remove {
+  background: none;
+  border: none;
+  color: var(--absent-strong);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 999px;
+}
+
+.ta-chip-remove:hover {
+  background: var(--absent-tint);
+}
+
+.ta-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ta-add-row .input-paper {
+  flex: 1;
+}
+
+/* -------------------------------------------------------------------------
+   Manual attendance entry
+   ------------------------------------------------------------------------- */
+
+.manual-entry-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.manual-entry-row .field {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .dot {
   width: 7px;
   height: 7px;
