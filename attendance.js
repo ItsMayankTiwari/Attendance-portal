@@ -112,12 +112,8 @@ function renderHome() {
       <div class="ledger-row" style="cursor:default;">
         <div class="donut-row" style="gap:14px;">
           ${donutSVG(r.percentage, 64, 7)}
-          <div>
-            <div class="ledger-row-title">${escapeHtml(r.course_name)}</div>
-            <div class="ledger-row-sub mono">${escapeHtml(r.course_code)} · ${r.attended_classes}/${r.total_classes}</div>
-          </div>
+          <div class="ledger-row-title">${escapeHtml(r.course_name)}</div>
         </div>
-        <span class="badge ${r.percentage < 75 ? 'badge-warn' : 'badge-verified'}">${r.percentage}%</span>
       </div>`).join('') + `</div></div>`;
     animateDonuts(donutList);
   }
@@ -157,37 +153,40 @@ function renderRecordsList() {
     el.innerHTML = `<div class="ledger"><div class="empty-state"><div class="empty-icon">📖</div><p>Nothing to show until your first class is recorded.</p></div></div>`;
     return;
   }
-  el.innerHTML = recordsCache.map(r => {
-    const lectures = (r.lectures || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-    const lectureRows = lectures.length
-      ? lectures.map(l => `
-          <div class="ledger-row" style="cursor:default;">
-            <div class="ledger-row-main"><div class="ledger-row-title">${formatDate(l.date)}</div></div>
-            <span class="badge ${l.present ? 'badge-verified' : 'badge-absent'}">
-              <span class="dot ${l.present ? 'dot-verified' : 'dot-absent'}"></span>${l.present ? 'Present' : 'Absent'}
-            </span>
-          </div>`).join('')
-      : `<div class="empty-state"><p>No lectures recorded yet.</p></div>`;
-
-    return `
-      <div class="ledger" style="margin-bottom:16px;">
-        <div style="padding:20px;" class="donut-row">
-          <div id="records-donut-${r.course_id}"></div>
-          <div>
-            <h2 style="font-size:1.05rem;">${escapeHtml(r.course_name)}</h2>
-            <p class="text-dim mono" style="font-size:0.85rem; margin-top:4px;">${escapeHtml(r.course_code)} · ${r.attended_classes}/${r.total_classes} lectures</p>
-          </div>
-        </div>
-        <div class="ledger-body--flush">${lectureRows}</div>
-      </div>`;
-  }).join('');
-
-  recordsCache.forEach(r => {
-    const holder = document.getElementById(`records-donut-${r.course_id}`);
-    if (holder) holder.innerHTML = donutSVG(r.percentage, 96, 9);
-  });
-  animateDonuts(el);
+  el.innerHTML = `<div class="ledger"><div class="ledger-body--flush">` + recordsCache.map(r => `
+    <button class="ledger-row" data-course-id="${r.course_id}">
+      <div class="ledger-row-main">
+        <div class="ledger-row-title">${escapeHtml(r.course_name)}</div>
+      </div>
+      <span class="ledger-arrow">→</span>
+    </button>`).join('') + `</div></div>`;
+  el.querySelectorAll('.ledger-row').forEach(row => row.onclick = () => openCourseDetail(row.dataset.courseId));
 }
+
+function openCourseDetail(courseId) {
+  const r = recordsCache.find(x => String(x.course_id) === String(courseId));
+  if (!r) return;
+  document.getElementById('detail-course-name').textContent = r.course_name;
+  document.getElementById('detail-course-meta').textContent = `${r.course_code} · ${r.attended_classes}/${r.total_classes} lectures`;
+  document.getElementById('detail-donut').innerHTML = donutSVG(r.percentage, 96, 9);
+
+  const lectures = (r.lectures || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+  const listEl = document.getElementById('detail-lecture-list');
+  listEl.innerHTML = lectures.length
+    ? lectures.map(l => `
+        <div class="ledger-row" style="cursor:default;">
+          <div class="ledger-row-main"><div class="ledger-row-title">${formatDate(l.date)}</div></div>
+          <span class="badge ${l.present ? 'badge-verified' : 'badge-absent'}">
+            <span class="dot ${l.present ? 'dot-verified' : 'dot-absent'}"></span>${l.present ? 'Present' : 'Absent'}
+          </span>
+        </div>`).join('')
+    : `<div class="empty-state"><p>No lectures recorded yet.</p></div>`;
+
+  switchView('course-detail');
+  animateDonuts(document.getElementById('detail-donut'));
+}
+
+document.getElementById('btn-back-records').onclick = () => switchView('records');
 
 // ---------------------------------------------------------------- add course
 
@@ -368,7 +367,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 function switchView(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.tab === name));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('is-active'));
-  const map = { home: 'view-home', records: 'view-records', profile: 'view-profile' };
+  const map = { home: 'view-home', records: 'view-records', profile: 'view-profile', 'course-detail': 'view-course-detail' };
   document.getElementById(map[name]).classList.add('is-active');
   if (name === 'records') renderRecordsList();
 }
