@@ -108,13 +108,17 @@ function renderHome() {
   if (recordsCache.length === 0) {
     donutList.innerHTML = `<div class="ledger"><div class="empty-state"><div class="empty-icon">📭</div><p>Your attendance will show up here once classes begin.</p></div></div>`;
   } else {
-    donutList.innerHTML = `<div class="ledger"><div class="ledger-body--flush">` + recordsCache.map(r => `
-      <div class="ledger-row" style="cursor:default;">
-        <div class="donut-row" style="gap:14px;">
-          ${donutSVG(r.percentage, 64, 7)}
-          <div class="ledger-row-title">${escapeHtml(r.course_name)}</div>
+    donutList.innerHTML = recordsCache.map(r => `
+      <div class="ledger" style="margin-bottom:12px;">
+        <div style="padding:20px;" class="donut-row">
+          ${donutSVG(r.percentage)}
+          <div>
+            <div class="ledger-row-sub" style="margin-bottom:2px;">${escapeHtml(r.course_name)}</div>
+            <div style="font-size:1.3rem; font-weight:600; font-family:var(--font-mono);">${r.attended_classes}<span class="text-dim">/${r.total_classes}</span></div>
+            ${r.percentage < 75 ? '<span class="badge badge-warn" style="margin-top:6px;">Below 75%</span>' : '<span class="badge badge-verified" style="margin-top:6px;">On track</span>'}
+          </div>
         </div>
-      </div>`).join('') + `</div></div>`;
+      </div>`).join('');
     animateDonuts(donutList);
   }
 
@@ -157,8 +161,12 @@ function renderRecordsList() {
     <button class="ledger-row" data-course-id="${r.course_id}">
       <div class="ledger-row-main">
         <div class="ledger-row-title">${escapeHtml(r.course_name)}</div>
+        <div class="ledger-row-sub">${r.attended_classes} of ${r.total_classes} classes</div>
       </div>
-      <span class="ledger-arrow">→</span>
+      <div class="ledger-row-end">
+        <span class="badge ${r.percentage < 75 ? 'badge-warn' : 'badge-verified'}">${r.percentage}%</span>
+        <span class="ledger-arrow">→</span>
+      </div>
     </button>`).join('') + `</div></div>`;
   el.querySelectorAll('.ledger-row').forEach(row => row.onclick = () => openCourseDetail(row.dataset.courseId));
 }
