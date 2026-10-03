@@ -235,7 +235,7 @@ async function startAttendance(courseId, courseName) {
 
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
-    { facingMode: { exact: 'environment' } },
+    { facingMode: 'environment' },
     {
       fps: 10,
       qrbox: (viewfinderWidth, viewfinderHeight) => {
@@ -243,9 +243,9 @@ async function startAttendance(courseId, courseName) {
         return { width: edge, height: edge };
       },
       videoConstraints: {
-        facingMode: { exact: 'environment' },
-        width: { min: 720, ideal: 1920 },
-        height: { min: 720, ideal: 1080 }
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
     },
     async (decodedText) => {
