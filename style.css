@@ -590,9 +590,7 @@ select.input { cursor: pointer; }
 #screen-scan {
   position: fixed;
   inset: 0;
-  background: rgba(8, 8, 16, 0.9);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: #000;
   z-index: 40;
   max-width: none;
   padding: 0;
@@ -840,13 +838,13 @@ hr.rule { border: none; border-top: 1px solid var(--border-plain); margin: 14px 
 
 /* 1. 3D Touch Physics (Spring Press) - Touch screens only */
 @media (hover: none) and (pointer: coarse) {
-  .bento-card, .btn, .ledger-row, .tab {
+  .bento-card {
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.2s !important;
   }
-  .bento-card:active, .btn:active, .ledger-row:active, .tab:active {
-    transform: perspective(1000px) scale3d(0.95, 0.95, 1) !important;
+  .bento-card:active {
+    transform: perspective(1000px) scale3d(0.98, 0.98, 1) !important;
     box-shadow: 0 0 0 transparent !important;
-    opacity: 0.8;
+    opacity: 0.9;
   }
 }
 
