@@ -222,6 +222,12 @@ document.getElementById('btn-confirm-add-course').onclick = async () => {
 };
 
 async function startAttendance(courseId, courseName) {
+  if (html5QrCode) return;
+  if (typeof Html5Qrcode === 'undefined') {
+    toast('Scanner failed to load. Reload and try again.', 'error');
+    return;
+  }
+
   document.getElementById('scan-course-title').textContent = courseName;
   document.getElementById('scan-verify-state').classList.add('hidden');
   document.getElementById('scan-camera-state').classList.remove('hidden');
@@ -230,8 +236,6 @@ async function startAttendance(courseId, courseName) {
   document.getElementById('scan-success-state').classList.add('hidden');
   document.getElementById('scan-fail-state').classList.add('hidden');
   show('screen-scan');
-
-  beginScanCountdown(20);
 
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
@@ -244,8 +248,8 @@ async function startAttendance(courseId, courseName) {
       },
       videoConstraints: {
         facingMode: { exact: 'environment' },
-        width: { min: 720, ideal: 1920 },
-        height: { min: 720, ideal: 1080 }
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
       }
     },
     async (decodedText) => {
@@ -274,6 +278,7 @@ async function startAttendance(courseId, courseName) {
     () => { }
   ).then(() => {
     enablePinchToZoom();
+    beginScanCountdown(20);
   }).catch((err) => {
     toast('Camera error: ' + (err.name || err.message || err), 'error');
     closeScan();

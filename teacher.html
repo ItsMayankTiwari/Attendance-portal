@@ -164,15 +164,8 @@
         <div id="live-active" class="hidden">
           <div class="qr-stage">
             <!-- QR frame: white, generous padding, no decorations -->
-            <div style="position: relative;">
-              <div class="qr-frame">
-                <div id="qr-box"></div>
-              </div>
-              <!-- Countdown ring SVG sits just outside the white frame -->
-              <svg class="qr-ring-svg" viewBox="0 0 380 380">
-                <circle class="qr-ring-track" cx="190" cy="190" r="186"/>
-                <circle class="qr-ring-value" id="qr-ring" cx="190" cy="190" r="186"/>
-              </svg>
+            <div class="qr-frame">
+              <div id="qr-box"></div>
             </div>
             <p class="text-dim" style="font-size: clamp(0.72rem, 1.3vw, 0.82rem); letter-spacing: 0.05em; text-transform: uppercase;">
               Refreshes every 4 s — project on classroom screen
