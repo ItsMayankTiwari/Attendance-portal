@@ -117,34 +117,20 @@ function animateDonuts(root = document) {
   });
 }
 
-// ---- QR HMAC (teacher side; Web Crypto, no library needed) ----------------
-
-async function hmacHex(secretHex, message) {
-  const keyBytes = new Uint8Array(secretHex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
-  const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
-  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function currentQrPayload(sessionId, secretHex, rotationSeconds) {
-  const bucket = Math.floor(Date.now() / 1000 / rotationSeconds);
-  const mac = await hmacHex(secretHex, `${sessionId}:${bucket}`);
-  return `${sessionId}:${bucket}:${mac.slice(0, 16)}`;  // truncated
-}
-
 // ---- tiny confirm sheet (replaces native confirm()) -----------------------
 
 function confirmSheet({ title, body, confirmLabel = 'Confirm', danger = false }) {
+  const esc = s => String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'sheet-backdrop center-modal is-open';
     backdrop.innerHTML = `
       <div class="sheet">
-        <h3 style="margin-bottom:8px;">${title}</h3>
-        <p class="text-dim" style="margin-bottom:18px;">${body}</p>
+        <h3 style="margin-bottom:8px;">${esc(title)}</h3>
+        <p class="text-dim" style="margin-bottom:18px;">${esc(body)}</p>
         <div class="btn-row">
           <button class="btn btn-ghost-paper" data-act="cancel">Cancel</button>
-          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok">${confirmLabel}</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok">${esc(confirmLabel)}</button>
         </div>
       </div>`;
     document.body.appendChild(backdrop);
