@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Attendance - Student</title>
+  <title>Attendance — Student</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@14.0.0/dist/bundle/index.umd.min.js"></script>
@@ -11,174 +11,229 @@
 </head>
 <body>
   <div class="app" id="app">
+
     <!-- ============ LOADING ============ -->
     <div class="screen is-active" id="screen-loading">
-      <div class="spinner" style="width:28px; height:28px; border-width:3px;"></div>
+      <div class="spinner" style="width:32px; height:32px; border-width:3px;"></div>
     </div>
 
     <!-- ============ SIGN IN ============ -->
     <div class="screen" id="screen-auth">
       <div>
         <h1 class="eyebrow-free-title">Attendance</h1>
-        <p class="subtitle text-dim">Sign in with your institute account to mark and track attendance.</p>
+        <p class="subtitle">Sign in with your institute account to mark and track attendance.</p>
       </div>
-      <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px; margin-top:20px;">Sign in with Google</button>
-      <p class="text-dim" id="auth-status" style="font-size:0.82rem; margin-top:10px;"></p>
+      <button class="btn btn-primary" id="btn-google-login" style="width: auto; padding-inline: 28px;">
+        Sign in with Google
+      </button>
+      <p class="text-dim" id="auth-status" style="font-size: 0.82rem;"></p>
     </div>
 
     <!-- ============ DEVICE SETUP ============ -->
     <div class="screen" id="screen-setup">
       <div>
         <h1 class="eyebrow-free-title">Register this device</h1>
-        <p class="subtitle text-dim" style="margin-top:8px;">Attendance is verified with your fingerprint or face unlock, so it can't be marked by anyone but you.</p>
+        <p class="subtitle">Attendance is verified with your fingerprint or face unlock, so it can't be marked by anyone but you.</p>
       </div>
-      <button class="btn btn-primary" id="btn-register-device" style="width:auto; padding-inline:24px; margin-top:20px;">Set up verification</button>
-      <p class="text-dim" id="setup-status" style="font-size:0.82rem; margin-top:10px;"></p>
+      <button class="btn btn-primary" id="btn-register-device" style="width: auto; padding-inline: 28px;">
+        Set up verification
+      </button>
+      <p class="text-dim" id="setup-status" style="font-size: 0.82rem;"></p>
     </div>
 
     <!-- ============ MAIN SHELL ============ -->
-    <div id="shell" class="hidden" style="display:flex; flex-direction:column; min-height:100vh;">
-      <div class="topbar spread" style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); background: var(--zinc-900);">
-        <div class="brand" style="font-weight: 600; font-size: 1.1rem;"><span style="color:var(--accent);">A</span> Attendance</div>
+    <div id="shell" class="hidden" style="display: flex; flex-direction: column; min-height: 100vh;">
+
+      <!-- Sticky topbar -->
+      <div class="topbar">
+        <div class="brand"><span class="brand-mark">A</span> Attendance</div>
         <button class="link-btn" id="btn-logout">Sign out</button>
       </div>
 
       <!-- ---- HOME ---- -->
-      <div class="view is-active" id="view-home" style="padding: 24px; max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 80px;">
-        <h1 style="margin-bottom:20px; font-size:1.6rem;">Dashboard</h1>
-        
-        <div class="bento-grid">
-          <div class="bento-card stack" style="align-items: flex-start;">
-            <h3 class="bento-header" style="margin-bottom:0;">Scanner</h3>
-            <p class="text-dim" style="font-size:0.85rem; margin-bottom:12px;">Scan the active class QR code to mark your attendance.</p>
-            <button class="btn btn-primary" id="btn-scan" style="width: 100%; padding:14px; font-size:1.05rem;">
-              Open Scanner
-            </button>
-          </div>
+      <div class="view is-active" id="view-home"
+        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
 
+        <!-- Identity card (IDs required by renderIdentity()) -->
+        <div class="bento-card" style="margin-bottom: 20px; display: flex; align-items: center; gap: 16px;">
+          <div class="avatar" id="home-avatar">?</div>
+          <div style="min-width: 0;">
+            <div id="home-name" style="font-weight: 600; font-size: clamp(0.95rem, 2vw, 1.1rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
+            <div id="home-roll" class="mono text-dim" style="font-size: clamp(0.78rem, 1.5vw, 0.88rem);">—</div>
+          </div>
+        </div>
+
+        <!-- Courses + scanner bento row -->
+        <div class="bento-grid" style="margin-bottom: 24px;">
           <div class="bento-card stack">
             <div class="spread">
-              <h3 class="bento-header" style="margin:0;">My Courses</h3>
+              <h3 class="bento-header" style="margin-bottom: 0;">My Courses</h3>
               <button class="link-btn" id="btn-add-course">+ Add</button>
             </div>
-            <div class="ledger-body--flush" id="course-list">
+            <!-- JS renders course rows into this element -->
+            <div id="course-list">
               <div class="skel skel-row"></div>
               <div class="skel skel-row"></div>
             </div>
           </div>
         </div>
 
-        <h3 class="bento-header" style="margin-top:10px;">Attendance Overview</h3>
-        <div id="course-donut-list" class="bento-grid"></div>
+        <!-- Attendance donuts (JS renders into this) -->
+        <h3 class="bento-header" style="margin-bottom: 14px;">Attendance Overview</h3>
+        <div id="course-donut-list"></div>
       </div>
 
       <!-- ---- RECORDS ---- -->
-      <div class="view hidden" id="view-records" style="padding: 24px; max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 80px;">
-        <h1 style="margin-bottom:20px; font-size:1.6rem;">Records</h1>
-        <div class="bento-card" style="padding:0; overflow:hidden;">
-          <div id="records-list">
-            <div class="skel skel-row"></div>
-            <div class="skel skel-row"></div>
-            <div class="skel skel-row"></div>
-          </div>
+      <div class="view" id="view-records"
+        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
+        <h1 style="margin-bottom: 20px; font-size: clamp(1.3rem, 3vw, 1.7rem);">Records</h1>
+        <!-- JS renders into this element -->
+        <div id="records-list">
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
         </div>
       </div>
 
       <!-- ---- COURSE DETAIL ---- -->
-      <div class="view hidden" id="view-course-detail" style="padding: 24px; max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 80px;">
-        <button class="link-btn" id="btn-back-records" style="padding-left:0; margin-bottom:16px;">&larr; Back to Records</button>
-        <div class="bento-card" style="margin-bottom:20px;">
+      <div class="view" id="view-course-detail"
+        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
+        <button class="link-btn" id="btn-back-records" style="padding-left: 0; margin-bottom: 18px;">
+          &larr; Records
+        </button>
+        <div class="bento-card" style="margin-bottom: 20px;">
           <div class="donut-row">
             <div id="detail-donut"></div>
             <div>
-              <h2 id="detail-course-name" style="font-size:1.2rem; margin-bottom:4px;">...</h2>
-              <p class="text-dim mono" id="detail-course-meta" style="font-size:0.85rem;"></p>
+              <h2 id="detail-course-name" style="font-size: clamp(1rem, 2.5vw, 1.2rem); margin-bottom: 4px;">—</h2>
+              <p class="text-dim mono" id="detail-course-meta" style="font-size: clamp(0.75rem, 1.5vw, 0.85rem);"></p>
             </div>
           </div>
         </div>
-        <h3 class="bento-header" style="margin-bottom:12px;">Lecture History</h3>
-        <div class="bento-card" style="padding:0; overflow:hidden;">
+        <h3 class="bento-header" style="margin-bottom: 12px;">Lecture History</h3>
+        <!-- JS renders rows into this element -->
+        <div class="ledger" style="overflow: hidden;">
           <div class="ledger-body--flush" id="detail-lecture-list"></div>
         </div>
       </div>
 
       <!-- ---- PROFILE ---- -->
-      <div class="view hidden" id="view-profile" style="padding: 24px; max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 80px;">
-        <h1 style="margin-bottom:20px; font-size:1.6rem;">Profile</h1>
-        <div class="bento-card stack" id="profile-view" style="margin-bottom:16px;">
+      <div class="view" id="view-profile"
+        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
+        <h1 style="margin-bottom: 20px; font-size: clamp(1.3rem, 3vw, 1.7rem);">Profile</h1>
+        <div class="bento-card stack" style="margin-bottom: 16px;">
           <div>
-            <label class="text-dim" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Name</label>
-            <div id="profile-name" style="font-size:1.1rem; font-weight:500;">...</div>
+            <label class="text-dim" style="font-size: clamp(0.68rem, 1.2vw, 0.75rem); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Name</label>
+            <div id="profile-name" style="font-size: clamp(0.95rem, 2vw, 1.05rem); font-weight: 500;">—</div>
           </div>
           <div>
-            <label class="text-dim" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Roll number</label>
-            <div class="mono" id="profile-roll" style="font-size:1.1rem; font-weight:500;">...</div>
+            <label class="text-dim" style="font-size: clamp(0.68rem, 1.2vw, 0.75rem); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Roll number</label>
+            <div class="mono" id="profile-roll" style="font-size: clamp(0.95rem, 2vw, 1.05rem); font-weight: 500;">—</div>
           </div>
           <div>
-            <label class="text-dim" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">Institute email</label>
-            <div class="mono text-dim" id="profile-email" style="font-size:0.9rem;">...</div>
+            <label class="text-dim" style="font-size: clamp(0.68rem, 1.2vw, 0.75rem); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Institute email</label>
+            <div class="mono text-dim" id="profile-email" style="font-size: clamp(0.82rem, 1.5vw, 0.9rem);">—</div>
           </div>
-          <button class="btn btn-ghost" id="btn-edit-profile" style="margin-top:12px; width: fit-content;">Edit Details</button>
+          <button class="btn btn-ghost" id="btn-edit-profile" style="width: fit-content; margin-top: 4px;">Edit profile</button>
         </div>
-        <p class="text-dim" style="font-size:0.85rem; padding:0 4px;">Editing requires a fresh biometric scan to ensure device integrity.</p>
+        <p class="text-dim" style="font-size: clamp(0.78rem, 1.4vw, 0.85rem); padding: 0 4px;">
+          Editing requires a fresh fingerprint check and cannot be used to re-mark attendance already logged under a different roll number.
+        </p>
       </div>
 
+      <!-- Tab bar -->
       <div class="tabbar">
-        <button class="tab is-active" data-tab="home">Home</button>
-        <button class="tab" data-tab="records">Records</button>
-        <button class="tab" data-tab="profile">Profile</button>
+        <button class="tab is-active" data-tab="home">
+          <span class="tab-icon">🏠</span>Home
+        </button>
+        <button class="tab" data-tab="records">
+          <span class="tab-icon">📋</span>Records
+        </button>
+        <button class="tab" data-tab="profile">
+          <span class="tab-icon">👤</span>Profile
+        </button>
       </div>
-    </div>
+    </div><!-- /shell -->
 
     <!-- ============ SCAN OVERLAY ============ -->
-    <div class="screen" id="screen-scan" style="position:fixed; inset:0; z-index:40; max-width:none; padding:0;">
-      <div id="scan-camera-state" class="hidden" style="position:absolute; inset:0;">
-        <div id="reader" style="width:100%; height:100%;"></div>
+    <div class="screen" id="screen-scan"
+      style="position: fixed; inset: 0; z-index: 40; max-width: none; padding: 0;">
+
+      <!-- Camera feed sits behind everything -->
+      <div id="scan-camera-state" class="hidden" style="position: absolute; inset: 0;">
+        <div id="reader" style="width: 100%; height: 100%;"></div>
       </div>
 
-      <div style="position:relative; z-index:2; height:100%; width:100%; max-width:480px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:center; text-align:center; pointer-events:none;">
-        <div class="glass-panel" style="padding:12px 24px; border-radius:var(--radius-lg); pointer-events:auto; margin-top:20px;">
-          <h2 id="scan-course-title" style="font-size:1.1rem; margin:0; text-shadow:0 1px 4px rgba(0,0,0,0.8);">...</h2>
+      <!-- UI overlay -->
+      <div style="position: relative; z-index: 2; height: 100%; width: 100%; max-width: 480px;
+                  margin: 0 auto; padding: 24px; display: flex; flex-direction: column;
+                  align-items: center; text-align: center; pointer-events: none;">
+
+        <!-- Course title pill -->
+        <div class="glass-panel" style="padding: 10px 22px; border-radius: var(--r-xl); pointer-events: auto; margin-top: 16px;">
+          <h2 id="scan-course-title" style="font-size: clamp(0.95rem, 2vw, 1.1rem); margin: 0;"></h2>
         </div>
 
-        <div id="scan-time-wrap" class="hidden" style="position:absolute; top:20px; right:20px; pointer-events:auto; z-index:3;">
+        <!-- Countdown badge — top-right -->
+        <div id="scan-time-wrap" class="hidden"
+          style="position: absolute; top: 20px; right: 20px; pointer-events: auto; z-index: 3;">
           <div class="scan-time-badge" id="scan-time">20</div>
         </div>
 
-        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; width:100%;">
-          <div id="scan-verify-state" class="radar-glow" style="pointer-events:auto;">
-            <div class="glass-panel" style="padding: 32px; border-radius: var(--radius-lg); text-align: center;">
-              <div class="spinner" style="margin-bottom: 16px;"></div>
-              <p class="subtitle" style="font-weight: 500; font-size: 1.1rem; margin: 0; text-shadow:none;">Awaiting Biometrics</p>
-              <p class="text-dim" style="font-size: 0.85rem; margin-top: 8px;">Please verify your identity</p>
+        <!-- Central state area -->
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center;
+                    justify-content: center; gap: 16px; width: 100%;">
+
+          <!-- Biometric waiting state with radar pulse -->
+          <div id="scan-verify-state" class="radar-glow" style="pointer-events: auto;">
+            <div class="glass-panel" style="padding: 32px 40px; border-radius: var(--r-xl); text-align: center;">
+              <div class="spinner" style="width: 28px; height: 28px; margin: 0 auto 16px;"></div>
+              <p style="font-weight: 600; font-size: clamp(1rem, 2vw, 1.1rem); margin: 0;">Awaiting Biometrics</p>
+              <p class="text-dim" style="font-size: clamp(0.78rem, 1.5vw, 0.85rem); margin-top: 8px;">Please verify your identity</p>
             </div>
           </div>
 
-          <div id="scan-success-state" class="hidden stack" style="align-items:center; pointer-events:auto;">
-            <div class="stamp">?</div>
-            <p style="font-weight:600; font-size:1.1rem; margin-top:16px;">Attendance Verified</p>
+          <!-- Success state -->
+          <div id="scan-success-state" class="hidden stack" style="align-items: center; pointer-events: auto;">
+            <div class="stamp">✓</div>
+            <p style="font-weight: 600; font-size: clamp(1rem, 2vw, 1.1rem); margin-top: 16px;">Attendance Verified</p>
           </div>
 
-          <div id="scan-fail-state" class="hidden stack" style="align-items:center; pointer-events:auto;">
-            <div class="glass-panel" style="padding: 24px; border-radius: var(--radius-lg);">
-              <div style="color:var(--danger); font-size:3rem; margin-bottom:12px;">?</div>
-              <p style="font-weight:600;" id="scan-fail-text">Verification Failed</p>
+          <!-- Fail state -->
+          <div id="scan-fail-state" class="hidden stack" style="align-items: center; pointer-events: auto;">
+            <div class="glass-panel" style="padding: 28px 36px; border-radius: var(--r-xl);">
+              <div style="color: var(--danger); font-size: 2.8rem; margin-bottom: 10px;">✕</div>
+              <p style="font-weight: 600; font-size: clamp(0.9rem, 2vw, 1rem);" id="scan-fail-text">Verification Failed</p>
             </div>
           </div>
         </div>
 
-        <p class="text-dim hidden glass-panel" id="scan-hint" style="pointer-events:auto; margin-bottom:14px; padding:8px 16px; border-radius:100px; font-size:0.85rem;">Point camera at QR code - pinch to zoom.</p>
-        <button class="btn btn-ghost glass-panel" id="btn-scan-cancel" style="width:auto; padding-inline:32px; pointer-events:auto; margin-bottom:20px;">Close</button>
+        <!-- Hint text -->
+        <p class="text-dim hidden" id="scan-hint"
+          style="pointer-events: auto; margin-bottom: 14px; font-size: clamp(0.78rem, 1.5vw, 0.85rem);
+                 background: var(--glass-bg); padding: 8px 18px; border-radius: 100px; border: 1px solid var(--border-plain);">
+          Point camera at QR code — pinch to zoom
+        </p>
+
+        <!-- Close button -->
+        <button class="btn btn-ghost" id="btn-scan-cancel"
+          style="width: auto; padding-inline: 32px; pointer-events: auto; margin-bottom: 24px;">
+          Close
+        </button>
       </div>
     </div>
-  </div>
+  </div><!-- /app -->
 
   <!-- ============ ADD COURSE SHEET ============ -->
   <div class="sheet-backdrop" id="sheet-add-course">
     <div class="sheet">
-      <h3 style="margin-bottom:8px;">Add a course</h3>
-      <p class="text-dim" style="font-size:0.85rem; margin-bottom:20px;">Enter the course code your instructor shared.</p>
-      <div class="field"><input class="input" id="input-course-code" placeholder="e.g. CS201" autocomplete="off"></div>
+      <h3 style="margin-bottom: 6px;">Add a course</h3>
+      <p class="text-dim" style="font-size: clamp(0.82rem, 1.5vw, 0.88rem); margin-bottom: 20px;">
+        Enter the course code your instructor shared.
+      </p>
+      <div class="field">
+        <input class="input" id="input-course-code" placeholder="e.g. CS201" autocomplete="off">
+      </div>
       <div class="btn-row">
         <button class="btn btn-ghost" id="btn-cancel-add-course">Cancel</button>
         <button class="btn btn-primary" id="btn-confirm-add-course">Add course</button>
@@ -189,17 +244,29 @@
   <!-- ============ EDIT PROFILE SHEET ============ -->
   <div class="sheet-backdrop" id="sheet-edit-profile">
     <div class="sheet">
-      <h3 style="margin-bottom:8px;">Edit profile</h3>
-      <p class="text-dim" style="font-size:0.85rem; margin-bottom:20px;" id="edit-profile-hint">Verify your fingerprint to continue.</p>
+      <h3 style="margin-bottom: 6px;">Edit profile</h3>
+      <p class="text-dim" id="edit-profile-hint"
+        style="font-size: clamp(0.82rem, 1.5vw, 0.88rem); margin-bottom: 20px;">
+        Verify your fingerprint to continue.
+      </p>
 
       <div id="edit-step-verify">
-        <button class="btn btn-primary" id="btn-edit-verify" style="margin-bottom:10px; width:100%;">Verify fingerprint</button>
-        <button class="btn btn-ghost" id="btn-cancel-edit-1" style="width:100%;">Cancel</button>
+        <button class="btn btn-primary" id="btn-edit-verify" style="width: 100%; margin-bottom: 10px;">
+          Verify fingerprint
+        </button>
+        <button class="btn btn-ghost" id="btn-cancel-edit-1" style="width: 100%;">Cancel</button>
       </div>
 
       <div id="edit-step-form" class="hidden">
-        <div class="field"><label>Name</label><input class="input" id="input-edit-name"></div>
-        <div class="field"><label>Roll number</label><input class="input" id="input-edit-roll" readonly style="text-transform:uppercase; opacity:.6; cursor:not-allowed;"></div>
+        <div class="field">
+          <label>Name</label>
+          <input class="input" id="input-edit-name">
+        </div>
+        <div class="field">
+          <label>Roll number</label>
+          <input class="input" id="input-edit-roll" readonly
+            style="text-transform: uppercase; opacity: 0.5; cursor: not-allowed;">
+        </div>
         <div class="btn-row">
           <button class="btn btn-ghost" id="btn-cancel-edit-2">Cancel</button>
           <button class="btn btn-primary" id="btn-save-edit">Save changes</button>

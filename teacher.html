@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Attendance - Instructor Console</title>
+  <title>Attendance — Instructor Console</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,134 +12,181 @@
 
   <!-- ============ LOADING ============ -->
   <div class="screen is-active" id="screen-loading">
-    <div class="spinner" style="width:28px; height:28px; border-width:3px;"></div>
+    <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
   </div>
 
   <!-- ============ SIGN IN ============ -->
-  <div class="screen" id="screen-auth">
+  <div class="screen" id="screen-auth" style="max-width: none;">
     <div>
       <h1 class="eyebrow-free-title">Instructor Console</h1>
-      <p class="subtitle text-dim" style="margin-top:8px;">Sign in with your authorised institute account.</p>
+      <p class="subtitle">Sign in with your authorised institute account.</p>
     </div>
-    <button class="btn btn-primary" id="btn-google-login" style="width:auto; padding-inline:24px; margin-top:24px;">Sign in with Google</button>
-    <p class="text-dim" id="auth-status" style="font-size:0.82rem; margin-top:12px;"></p>
+    <button class="btn btn-primary" id="btn-google-login" style="width: auto; padding-inline: 28px;">
+      Sign in with Google
+    </button>
+    <p class="text-dim" id="auth-status" style="font-size: 0.82rem;"></p>
   </div>
 
   <!-- ============ CONSOLE SHELL ============ -->
   <div class="teacher-shell hidden" id="shell">
+
+    <!-- Nav rail -->
     <div class="navrail">
-      <div class="brand" style="padding:12px; font-weight:600; font-size:1.1rem; margin-bottom:16px;">
-        <span style="color:var(--accent);">A</span> Attendance
+      <div class="brand" style="padding: 8px 12px 20px;">
+        <span class="brand-mark">A</span> Attendance
       </div>
-      <button class="navrail-item is-active" data-view="overview">Class Overview</button>
-      <button class="navrail-item" data-view="grid">Attendance Sheet</button>
-      <button class="navrail-item" data-view="live">Live Session</button>
-      <button class="navrail-item" data-view="courses">Manage Courses</button>
-      <div style="flex:1;"></div>
-      <div style="padding:10px 14px; font-size:0.8rem; color:var(--zinc-text-dim);" id="user-badge"></div>
-      <button class="navrail-item" id="btn-logout">Sign out</button>
+      <button class="navrail-item is-active" data-view="overview">📊 Class Overview</button>
+      <button class="navrail-item" data-view="grid">📋 Attendance Sheet</button>
+      <button class="navrail-item" data-view="live">📡 Live Session</button>
+      <button class="navrail-item" data-view="courses">⚙ Manage Courses</button>
+      <div style="flex: 1;"></div>
+      <div style="padding: 10px 14px; font-size: clamp(0.7rem, 1.2vw, 0.78rem); color: var(--text-dim);" id="user-badge"></div>
+      <button class="navrail-item" id="btn-logout">↩ Sign out</button>
     </div>
 
+    <!-- Main content -->
     <div class="teacher-main">
-      <div class="spread" style="margin-bottom:24px; flex-wrap:wrap; gap:12px;">
-        <h1 class="eyebrow-free-title" id="page-title" style="font-size:1.8rem;">Class Overview</h1>
-        <select class="input" id="course-select" style="width:auto; min-width:240px; background:var(--zinc-900);"></select>
+
+      <!-- Page header (course selector + title) -->
+      <div class="spread" style="margin-bottom: 28px; flex-wrap: wrap; gap: 14px;">
+        <h1 class="eyebrow-free-title" id="page-title" style="font-size: clamp(1.3rem, 3vw, 1.8rem);">Class Overview</h1>
+        <select class="input" id="course-select" style="width: auto; min-width: 220px;"></select>
       </div>
 
       <!-- ---- OVERVIEW ---- -->
       <div class="teacher-view is-active" id="tview-overview">
-        <div id="overview-empty" class="bento-card hidden" style="text-align:center; padding:40px;">
-          <p class="text-dim">Select or create a course to see its attendance.</p>
+        <div id="overview-empty" class="bento-card hidden" style="text-align: center; padding: 48px 20px;">
+          <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <p>Select or create a course to see its attendance.</p>
+          </div>
         </div>
 
         <div id="overview-content" class="hidden">
-          <div class="bento-grid">
-            <div class="bento-card stack">
-              <div class="spread">
-                <h3 class="bento-header" style="margin:0;">Snapshot</h3>
-                <span class="text-dim mono" id="overview-session-count" style="font-size:0.8rem;">0 lectures</span>
+          <!-- Stats bento row -->
+          <div class="bento-grid" style="margin-bottom: 20px;">
+            <div class="bento-card">
+              <div class="spread" style="margin-bottom: 16px;">
+                <h3 class="bento-header" style="margin: 0;">Snapshot</h3>
+                <span class="text-dim mono" id="overview-session-count"
+                  style="font-size: clamp(0.7rem, 1.2vw, 0.78rem);">0 lectures</span>
               </div>
-              <div class="spread" style="gap:24px; flex-wrap:wrap; align-items:center;">
+              <div class="donut-row" style="flex-wrap: wrap; gap: 20px;">
                 <div id="overview-donut"></div>
-                <div class="stack" style="gap:4px;">
-                  <div style="font-size:1.6rem; font-weight:600; color:var(--accent);" class="mono" id="overview-avg">...</div>
-                  <div class="text-dim" style="font-size:0.8rem; text-transform:uppercase;">avg attendance</div>
+                <div class="stack" style="gap: 4px;">
+                  <div style="font-size: clamp(1.3rem, 2.5vw, 1.6rem); font-weight: 600; color: var(--success-light);"
+                    class="mono" id="overview-avg">—</div>
+                  <div class="text-dim" style="font-size: clamp(0.7rem, 1.2vw, 0.78rem); text-transform: uppercase; letter-spacing: 0.05em;">avg attendance</div>
                 </div>
-                <div class="stack" style="gap:4px;">
-                  <div style="font-size:1.6rem; font-weight:600; color:var(--danger);" class="mono" id="overview-at-risk-count">...</div>
-                  <div class="text-dim" style="font-size:0.8rem; text-transform:uppercase;">below 75%</div>
+                <div class="stack" style="gap: 4px;">
+                  <div style="font-size: clamp(1.3rem, 2.5vw, 1.6rem); font-weight: 600; color: var(--danger);"
+                    class="mono" id="overview-at-risk-count">—</div>
+                  <div class="text-dim" style="font-size: clamp(0.7rem, 1.2vw, 0.78rem); text-transform: uppercase; letter-spacing: 0.05em;">below 75%</div>
                 </div>
               </div>
             </div>
 
-            <div id="at-risk-panel" class="bento-card" style="padding:0; overflow:hidden;"></div>
+            <!-- At-risk panel — JS fills this -->
+            <div id="at-risk-panel"></div>
           </div>
 
-          <div class="bento-card" style="padding:0; overflow:hidden;">
-            <div class="spread" style="padding:20px; border-bottom:1px solid var(--border-light);">
-              <h3 class="bento-header" style="margin:0;">Roster</h3>
-              <button class="btn btn-ghost" id="btn-export-csv" style="padding:6px 12px; font-size:0.8rem;">Export CSV</button>
+          <!-- Full roster -->
+          <div class="bento-card" style="padding: 0; overflow: hidden;">
+            <div class="ledger-head">
+              <h3>All students</h3>
+              <button class="link-btn" id="btn-export-csv">Export CSV</button>
             </div>
-            <table class="grid-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th style="text-align:center;">Classes</th>
-                  <th style="text-align:center;">%</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="roster-table-body"></tbody>
-            </table>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th class="num">Classes</th>
+                    <th class="num">%</th>
+                    <th class="num"></th>
+                  </tr>
+                </thead>
+                <tbody id="roster-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- ---- ATTENDANCE SHEET ---- -->
       <div class="teacher-view" id="tview-grid">
-        <div id="grid-empty" class="bento-card hidden" style="text-align:center; padding:40px;">
-          <p class="text-dim">No lectures recorded for this course yet.</p>
+        <div id="grid-empty" class="bento-card hidden" style="text-align: center; padding: 48px 20px;">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>No lectures recorded for this course yet.</p>
+          </div>
         </div>
-        <div class="bento-card hidden stack" id="grid-content" style="padding:0; overflow:hidden;">
-          <div style="padding:20px; border-bottom:1px solid var(--border-light);">
-            <h3 class="bento-header">Manual Entry</h3>
-            <div class="spread" style="gap:12px; flex-wrap:wrap;">
-              <select class="input" id="grid-session-select" style="max-width:200px;"></select>
-              <input class="input" id="grid-manual-roll" placeholder="Roll number" style="max-width:180px;">
-              <button class="btn btn-primary" id="btn-grid-mark">Mark Present</button>
-              <button class="btn btn-ghost" id="btn-grid-unmark">Remove</button>
+
+        <div class="bento-card hidden" id="grid-content" style="padding: 0; overflow: hidden;">
+          <div class="ledger-head" style="flex-wrap: wrap; gap: 10px;">
+            <h3>Edit attendance by roll number</h3>
+            <span class="meta">Works for ended sessions too</span>
+          </div>
+          <div style="padding: 16px 18px; border-bottom: 1px solid var(--border-plain);">
+            <div class="manual-entry-row">
+              <div class="field">
+                <select class="input input-paper" id="grid-session-select"></select>
+              </div>
+              <div class="field">
+                <input class="input input-paper" id="grid-manual-roll" placeholder="Roll number">
+              </div>
+              <button class="btn btn-primary" id="btn-grid-mark" style="width: auto; padding-inline: 16px;">Mark present</button>
+              <button class="btn btn-ghost-paper" id="btn-grid-unmark" style="width: auto; padding-inline: 16px;">Remove</button>
             </div>
           </div>
-          <div style="overflow-x:auto;">
-            <table class="grid-table" id="lecture-grid-table" style="width:100%;"></table>
+          <div class="grid-scroll" style="padding: 0;">
+            <table class="grid-table" id="lecture-grid-table"></table>
           </div>
         </div>
       </div>
 
       <!-- ---- LIVE SESSION ---- -->
       <div class="teacher-view" id="tview-live">
-        <div id="live-idle" class="bento-card" style="text-align:center; padding:60px 20px;">
-          <h2 style="margin-bottom:12px; font-size:1.4rem;">Start Live Projection</h2>
-          <p class="text-dim" style="margin-bottom:24px;">Start a session to project the rotating QR code onto the classroom screen.</p>
-          <button class="btn btn-primary" id="btn-start-session" style="padding-inline:32px; font-size:1.05rem;">Launch Session</button>
+        <!-- Idle state -->
+        <div id="live-idle" class="bento-card" style="text-align: center; padding: 64px 24px;">
+          <h2 style="margin-bottom: 12px; font-size: clamp(1.2rem, 2.5vw, 1.5rem);">Start Live Projection</h2>
+          <p class="text-dim" style="margin-bottom: 28px; font-size: clamp(0.85rem, 1.5vw, 0.95rem);">
+            Start a session to project a rotating QR code for this course.
+          </p>
+          <button class="btn btn-primary" id="btn-start-session" style="width: auto; padding-inline: 32px; font-size: 1rem;">
+            Start live session
+          </button>
         </div>
 
+        <!-- Active state — QR occupies maximum space, clean white frame, no decorations -->
         <div id="live-active" class="hidden">
           <div class="qr-stage">
-            <div class="radar-glow rect">
+            <!-- QR frame: white, generous padding, no decorations -->
+            <div style="position: relative;">
               <div class="qr-frame">
                 <div id="qr-box"></div>
               </div>
+              <!-- Countdown ring SVG sits just outside the white frame -->
+              <svg class="qr-ring-svg" viewBox="0 0 380 380">
+                <circle class="qr-ring-track" cx="190" cy="190" r="186"/>
+                <circle class="qr-ring-value" id="qr-ring" cx="190" cy="190" r="186"/>
+              </svg>
             </div>
-            <p class="text-dim" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; margin-top:32px;">Refreshes every 4 seconds - Do not minimize</p>
+            <p class="text-dim" style="font-size: clamp(0.72rem, 1.3vw, 0.82rem); letter-spacing: 0.05em; text-transform: uppercase;">
+              Refreshes every 4 s — project on classroom screen
+            </p>
           </div>
 
-          <div class="spread bento-card" style="margin-top:20px; align-items:center;">
+          <!-- Counter + end button -->
+          <div class="spread" style="margin-top: 20px; padding: 20px 24px; background: var(--bg-card);
+               border: 1px solid var(--border-plain); border-radius: var(--r-lg);">
             <div class="counter-tile">
               <span class="num" id="live-count">0</span>
-              <span class="text-dim" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; margin-left:8px;">Marked Present</span>
+              <span class="text-dim" style="font-size: clamp(0.78rem, 1.4vw, 0.88rem);">marked present</span>
             </div>
-            <button class="btn btn-danger" id="btn-end-session">End Session</button>
+            <button class="btn btn-danger" id="btn-end-session" style="width: auto; padding-inline: 20px;">
+              End session
+            </button>
           </div>
         </div>
       </div>
@@ -147,20 +194,28 @@
       <!-- ---- COURSES ---- -->
       <div class="teacher-view" id="tview-courses">
         <div class="bento-grid">
+          <!-- Create form -->
           <div class="bento-card stack">
-            <h3 class="bento-header">Create Course</h3>
-            <div class="field"><input class="input" id="input-new-code" placeholder="Code, e.g. CS201"></div>
-            <div class="field"><input class="input" id="input-new-name" placeholder="Name, e.g. Data Structures"></div>
-            <button class="btn btn-primary" id="btn-create-course" style="width:fit-content;">Create Course</button>
+            <h3 class="bento-header">Create a course</h3>
+            <div class="field">
+              <input class="input input-paper" id="input-new-code" placeholder="Course code, e.g. CS201">
+            </div>
+            <div class="field">
+              <input class="input input-paper" id="input-new-name" placeholder="Course name, e.g. Data Structures">
+            </div>
+            <button class="btn btn-primary" id="btn-create-course" style="width: fit-content;">Create course</button>
           </div>
-          <div class="bento-card stack" style="padding:0; overflow:hidden;">
-            <h3 class="bento-header" style="margin:20px 20px 10px;">Manage Existing</h3>
+
+          <!-- Existing courses list -->
+          <div class="bento-card" style="padding: 0; overflow: hidden;">
+            <div class="ledger-head"><h3>Your courses</h3></div>
             <div class="ledger-body--flush" id="courses-manage-list"></div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+
+    </div><!-- /teacher-main -->
+  </div><!-- /teacher-shell -->
 
   <script src="shared.js"></script>
   <script src="teacher.js"></script>
