@@ -244,8 +244,8 @@ async function startAttendance(courseId, courseName) {
       },
       videoConstraints: {
         facingMode: { exact: 'environment' },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
+        width: { min: 720, ideal: 1920 },
+        height: { min: 720, ideal: 1080 }
       }
     },
     async (decodedText) => {
