@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Attendance — Student</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@14.0.0/dist/bundle/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/min.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -217,8 +217,8 @@
 
       <div id="edit-step-form" class="hidden">
         <div class="field"><label>Name</label><input class="input input-paper" id="input-edit-name"></div>
-        <div class="field"><label>Roll number</label><input class="input input-paper" id="input-edit-roll"
-            style="text-transform:uppercase;"></div>
+        <div class="field"><label>Roll number</label><input class="input input-paper" id="input-edit-roll" readonly
+            style="text-transform:uppercase; opacity:.6;"></div>
         <div class="btn-row">
           <button class="btn btn-ghost-paper" id="btn-cancel-edit-2">Cancel</button>
           <button class="btn btn-primary" id="btn-save-edit">Save changes</button>

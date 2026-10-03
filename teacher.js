@@ -8,9 +8,8 @@ let selectedCourseId = null;
 let courseDataCache = null; // { total_sessions, sessions:[{id,session_date}], stats:[...] }
 
 let activeSessionId = null;
-let sessionSecret = null;
 let rotationSeconds = 6;
-let qrInterval = null;
+let qrTimer = null;
 let pollInterval = null;
 let liveQrCodeInstance = null;
 
@@ -176,7 +175,8 @@ document.getElementById('btn-export-csv').onclick = () => {
   const course = courses.find(c => String(c.id) === String(selectedCourseId));
   const rows = [['Roll Number', 'Name', 'Attended', 'Total', 'Percentage']];
   courseDataCache.stats.forEach(s => rows.push([s.roll_number, s.name, s.attended_classes, s.total_classes, s.percentage + '%']));
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const cell = (v) => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
+  const csv = rows.map(r => r.map(cell).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -342,59 +342,62 @@ function renderLiveView() {
   document.getElementById('live-active').classList.toggle('hidden', !activeSessionId);
 }
 
+function stopLiveLocally() {
+  clearTimeout(qrTimer); qrTimer = null;
+  clearInterval(pollInterval); pollInterval = null;
+  activeSessionId = null;
+  renderLiveView();
+}
+
 document.getElementById('btn-start-session').onclick = async () => {
   if (!selectedCourseId) { toast('Select a course first.', 'error'); return; }
   try {
     const data = await authedFetch('/api/start-session', { method: 'POST', body: JSON.stringify({ course_id: selectedCourseId }) });
     activeSessionId = data.session_id;
-    sessionSecret = data.session_secret;
     rotationSeconds = data.rotation_seconds || 6;
+    if (data.resumed) toast('Resumed the session already running for this course.', 'success');
 
     document.getElementById('live-count').textContent = '0';
     renderLiveView();
-
-    await refreshQr();
-    qrInterval = setInterval(refreshQr, rotationSeconds * 1000);
+    clearTimeout(qrTimer); clearInterval(pollInterval);
+    refreshQr();
     pollInterval = setInterval(refreshLiveRoster, 4000);
     refreshLiveRoster();
   } catch (err) { toast(err.message, 'error'); }
 };
 
 async function refreshQr() {
-  const payload = await currentQrPayload(activeSessionId, sessionSecret, rotationSeconds);
-  const box = document.getElementById('qr-box');
-  box.innerHTML = '';
-  liveQrCodeInstance = new QRCode(box, {
-    text: payload,
-    width: 280,
-    height: 280,
-    colorDark: '#000000',
-    colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.L
-  });
+  if (!activeSessionId) return;
+  let waitMs = 1000;
+  try {
+    const data = await authedFetch(`/api/session-qr?session_id=${encodeURIComponent(activeSessionId)}`);
+    const box = document.getElementById('qr-box');
+    box.innerHTML = '';
+    liveQrCodeInstance = new QRCode(box, {
+      text: data.payload, width: 280, height: 280,
+      colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.L
+    });
+    waitMs = Math.max(data.ms_until_next + 50, 500);
+  } catch (err) {
+    if (/ended|not found|not authorized/i.test(err.message)) { toast(err.message, 'error'); stopLiveLocally(); return; }
+  }
+  qrTimer = setTimeout(refreshQr, waitMs);
 }
 
-// Live updates come from a plain poll rather than Supabase Realtime: it works
-// the same regardless of whether the project's replication settings are
-// switched on, which is one less thing to remember to configure.
 async function refreshLiveRoster() {
   if (!activeSessionId) return;
   try {
     const records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
     document.getElementById('live-count').textContent = records.length;
-  } catch (err) { /* transient poll errors are not worth interrupting the session for */ }
+  } catch (err) { /* transient */ }
 }
 
 document.getElementById('btn-end-session').onclick = async () => {
   const ok = await confirmSheet({ title: 'End this session?', body: 'Students will no longer be able to scan in.', confirmLabel: 'End session', danger: true });
   if (!ok) return;
   try { await authedFetch('/api/end-session', { method: 'POST', body: JSON.stringify({ session_id: activeSessionId }) }); }
-  catch (err) { toast(err.message, 'error'); }
-
-  clearInterval(qrInterval); qrInterval = null;
-  clearInterval(pollInterval); pollInterval = null;
-  activeSessionId = null; sessionSecret = null;
-  renderLiveView();
+  catch (err) { toast(err.message, 'error'); return; }
+  stopLiveLocally();
   await loadCourseData();
 };
 
