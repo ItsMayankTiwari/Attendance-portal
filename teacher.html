@@ -7,8 +7,10 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+  <div id="auth-bg-canvas" style="position:fixed; inset:0; z-index:-1;"></div>
 
   <!-- ============ LOADING ============ -->
   <div class="screen is-active" id="screen-loading">
@@ -219,5 +221,7 @@
 
   <script src="shared.js"></script>
   <script src="teacher.js"></script>
+  <script src="ui-fx.js"></script>
+  <script src="auth-bg.js"></script>
 </body>
 </html>

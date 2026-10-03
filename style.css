@@ -651,13 +651,14 @@ select.input { cursor: pointer; }
   display: flex; align-items: center; justify-content: center;
   font-size: 2.4rem;
   margin: 0 auto;
-  animation: stamp-in 0.5s cubic-bezier(.2, 1.6, .4, 1) both;
   box-shadow: 0 0 32px rgba(16,185,129,0.5);
+  transform-style: preserve-3d;
+  animation: stamp-flip 0.6s cubic-bezier(.2, 1.6, .4, 1) both;
 }
-@keyframes stamp-in {
-  0%   { transform: scale(0.3); opacity: 0; }
-  60%  { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); }
+@keyframes stamp-flip {
+  0%   { transform: rotateY(90deg) scale(0.3); opacity: 0; }
+  60%  { transform: rotateY(-10deg) scale(1.1); opacity: 1; }
+  100% { transform: rotateY(0deg) scale(1); }
 }
 
 /* ==========================================================================
@@ -780,12 +781,16 @@ hr.rule { border: none; border-top: 1px solid var(--border-plain); margin: 14px 
 .spinner {
   width: 22px; height: 22px;
   border-radius: 50%;
-  border: 2px solid var(--bg-raised);
+  border: 2px solid transparent;
   border-top-color: var(--accent-light);
-  animation: spin 0.75s linear infinite;
+  border-right-color: var(--accent);
+  animation: spin-3d 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
   display: inline-block;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-3d {
+  0%   { transform: rotateX(60deg) rotateZ(0deg); }
+  100% { transform: rotateX(60deg) rotateZ(360deg); }
+}
 
 /* ==========================================================================
    At-risk panel (teacher overview, JS-generated)
