@@ -354,7 +354,7 @@ document.getElementById('btn-start-session').onclick = async () => {
   try {
     const data = await authedFetch('/api/start-session', { method: 'POST', body: JSON.stringify({ course_id: selectedCourseId }) });
     activeSessionId = data.session_id;
-    rotationSeconds = data.rotation_seconds || 6;
+    rotationSeconds = data.rotation_seconds || 4;
     if (data.resumed) toast('Resumed the session already running for this course.', 'success');
 
     document.getElementById('live-count').textContent = '0';
