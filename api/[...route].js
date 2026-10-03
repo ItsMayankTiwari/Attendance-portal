@@ -16,6 +16,7 @@ import teacherRecords from '../lib/teacher-records.js';
 import manageTa from '../lib/manage-ta.js';
 import addAttendanceManual from '../lib/add-attendance-manual.js';
 import removeEnrollment from '../lib/remove-enrollment.js';
+import fixRollNumber from '../lib/fix-roll-number.js';
 
 const routes = {
   'teacher-courses': teacherCourses,
@@ -35,7 +36,8 @@ const routes = {
   'teacher-records': teacherRecords,
   'manage-ta': manageTa,
   'add-attendance-manual': addAttendanceManual,
-  'remove-enrollment': removeEnrollment
+  'remove-enrollment': removeEnrollment,
+  'fix-roll-number': fixRollNumber
 };
 
 export default async function handler(req, res) {
