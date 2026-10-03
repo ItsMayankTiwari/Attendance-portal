@@ -143,15 +143,24 @@
 
   setInterval(() => {
     const visible = isTargetVisible();
-    if (visible && !animId) {
-      container.style.display = 'block';
-      resize(); // Ensure size is correct when shown
-      animId = requestAnimationFrame(animate);
-    } else if (!visible && animId) {
-      cancelAnimationFrame(animId);
-      animId = null;
+    if (visible) {
+      if (!animId) {
+        container.style.display = 'block';
+        resize(); // Ensure size is correct when shown
+        animId = requestAnimationFrame(animate);
+      }
+    } else {
+      if (animId) {
+        cancelAnimationFrame(animId);
+        animId = null;
+      }
       container.style.display = 'none';
     }
   }, 200);
+
+  // Initialize state immediately
+  if (!isTargetVisible()) {
+    container.style.display = 'none';
+  }
 
 })();

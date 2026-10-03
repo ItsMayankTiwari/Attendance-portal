@@ -233,24 +233,21 @@ async function startAttendance(courseId, courseName) {
 
   beginScanCountdown(20);
 
-  // Allow browser to paint the new display:flex layout before initializing scanner
-  // to ensure #reader has concrete computed dimensions (fixes mobile WebKit bugs)
-  setTimeout(() => {
-    html5QrCode = new Html5Qrcode('reader');
-    html5QrCode.start(
-      { facingMode: { exact: 'environment' } },
-      {
-        fps: 10,
-        qrbox: (viewfinderWidth, viewfinderHeight) => {
-          const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
-          return { width: edge, height: edge };
-        },
-        videoConstraints: {
-          facingMode: { exact: 'environment' },
-          width: { min: 720, ideal: 1920 },
-          height: { min: 720, ideal: 1080 }
-        }
+  html5QrCode = new Html5Qrcode('reader');
+  html5QrCode.start(
+    { facingMode: { exact: 'environment' } },
+    {
+      fps: 10,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
+        return { width: edge, height: edge };
       },
+      videoConstraints: {
+        facingMode: { exact: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    },
     async (decodedText) => {
       clearScanCountdown();
       safeStopScanner();
@@ -281,7 +278,6 @@ async function startAttendance(courseId, courseName) {
     toast('Camera error: ' + (err.name || err.message || err), 'error');
     closeScan();
   });
-  }, 50);
 }
 
 // html5-qrcode's stop() throws synchronously (not just a rejected promise)
