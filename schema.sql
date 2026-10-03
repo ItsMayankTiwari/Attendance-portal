@@ -70,3 +70,19 @@ alter table course_staff enable row level security;
 alter table enrollments enable row level security;
 alter table sessions enable row level security;
 alter table attendance_records enable row level security;
+
+-- Explicitly RESTRICTIVE policies (Defense in depth)
+-- We enforce that no one can read or write directly from the frontend using the anon/authenticated key.
+-- All operations MUST go through the Vercel API routes which use the Service Role key.
+create policy "Deny all reads" on students as restrictive for select using (false);
+create policy "Deny all writes" on students as restrictive for all using (false);
+create policy "Deny all reads" on courses as restrictive for select using (false);
+create policy "Deny all writes" on courses as restrictive for all using (false);
+create policy "Deny all reads" on course_staff as restrictive for select using (false);
+create policy "Deny all writes" on course_staff as restrictive for all using (false);
+create policy "Deny all reads" on enrollments as restrictive for select using (false);
+create policy "Deny all writes" on enrollments as restrictive for all using (false);
+create policy "Deny all reads" on sessions as restrictive for select using (false);
+create policy "Deny all writes" on sessions as restrictive for all using (false);
+create policy "Deny all reads" on attendance_records as restrictive for select using (false);
+create policy "Deny all writes" on attendance_records as restrictive for all using (false);
