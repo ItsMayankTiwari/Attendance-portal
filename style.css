@@ -5,6 +5,7 @@
    ========================================================================== */
 
 :root {
+  color-scheme: dark;
   /* Depth palette */
   --bg-base:    #080810;
   --bg-surface: #0f0f1a;
@@ -359,6 +360,7 @@ button { font-family: inherit; cursor: pointer; outline: none; border: none; }
   font-size: 16px; /* CRITICAL: Must be at least 16px to prevent iOS Safari auto-zoom glitch */
   transition: border-color 0.2s, box-shadow 0.2s;
   appearance: none;
+  color-scheme: dark;
 }
 .input:focus, .input-paper:focus {
   outline: none;
