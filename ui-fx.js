@@ -9,6 +9,12 @@
   // Safely skips mobile devices to prevent touch glitches
   function applyTilt(card) {
     if (!isDesktop || card.dataset.tiltInit || !card.classList.contains('bento-card')) return;
+    
+    // CRITICAL FIX: CSS 3D transforms (rotateX/Y) break the OS-level rendering of native <select> 
+    // dropdowns on Windows Chrome, causing them to detach and stretch across the screen. 
+    // We strictly disable the tilt effect on any card containing an input or select.
+    if (card.querySelector('select, input')) return;
+
     card.dataset.tiltInit = 'true';
     card.style.transformStyle = 'preserve-3d';
 
