@@ -9,6 +9,9 @@ let coursesCache = [];       // [{id, course_code, course_name}]
 let html5QrCode = null;
 let scanTimer = null;
 let editToken = null;
+const ATTEMPT_SECONDS = 30;
+let scanPhase = 'idle';
+let attemptEndsAt = 0;
 
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('is-active'));
@@ -221,12 +224,42 @@ document.getElementById('btn-confirm-add-course').onclick = async () => {
   }
 };
 
+function beginAttemptCountdown() {
+  const timeEl = document.getElementById('scan-time');
+  attemptEndsAt = Date.now() + ATTEMPT_SECONDS * 1000;
+  clearScanCountdown();
+  const tick = () => {
+    const left = Math.max(0, Math.ceil((attemptEndsAt - Date.now()) / 1000));
+    timeEl.textContent = left;
+    if (left <= 0) onAttemptTimeout();
+  };
+  tick();
+  scanTimer = setInterval(tick, 250);
+}
+
+function cancelFingerprintPrompt() {
+  try { SimpleWebAuthnBrowser.WebAuthnAbortService.cancelCeremony(); } catch (e) { }
+}
+
+function showScanFail(msg) {
+  ['scan-camera-state', 'scan-time-wrap', 'scan-hint', 'scan-verify-state']
+    .forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById('scan-fail-text').textContent = msg;
+  document.getElementById('scan-fail-state').classList.remove('hidden');
+}
+
+function onAttemptTimeout() {
+  if (scanPhase === 'done') return;
+  scanPhase = 'done';
+  clearScanCountdown();
+  safeStopScanner();
+  cancelFingerprintPrompt();
+  showScanFail('Time ran out. Tap the course again to retry.');
+}
+
 async function startAttendance(courseId, courseName) {
+  if (typeof Html5Qrcode === 'undefined') { toast('Scanner failed to load. Reload and try again.', 'error'); return; }
   if (html5QrCode) return;
-  if (typeof Html5Qrcode === 'undefined') {
-    toast('Scanner failed to load. Reload and try again.', 'error');
-    return;
-  }
 
   document.getElementById('scan-course-title').textContent = courseName;
   document.getElementById('scan-verify-state').classList.add('hidden');
@@ -237,48 +270,54 @@ async function startAttendance(courseId, courseName) {
   document.getElementById('scan-fail-state').classList.add('hidden');
   show('screen-scan');
 
+  scanPhase = 'scanning';
+  beginAttemptCountdown();
+
   html5QrCode = new Html5Qrcode('reader');
   html5QrCode.start(
     { facingMode: { exact: 'environment' } },
     {
       fps: 10,
-      qrbox: (viewfinderWidth, viewfinderHeight) => {
-        const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8);
-        return { width: edge, height: edge };
-      },
-      videoConstraints: {
-        facingMode: { exact: 'environment' },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
-      }
+      qrbox: (w, h) => { const e = Math.floor(Math.min(w, h) * 0.8); return { width: e, height: e }; },
+      videoConstraints: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
     },
     async (decodedText) => {
-      clearScanCountdown();
+      if (scanPhase !== 'scanning') return;
+      scanPhase = 'verifying';
       safeStopScanner();
       document.getElementById('scan-camera-state').classList.add('hidden');
-      document.getElementById('scan-time-wrap').classList.add('hidden');
       document.getElementById('scan-hint').classList.add('hidden');
       document.getElementById('scan-verify-state').classList.remove('hidden');
 
       try {
         const options = await authedFetch('/api/attendance-options', { method: 'POST', body: JSON.stringify({ qr_payload: decodedText }) });
+        if (scanPhase !== 'verifying') return;
         const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
+        if (scanPhase !== 'verifying') return;
         await authedFetch('/api/mark-attendance', { method: 'POST', body: JSON.stringify({ response: assertion, qr_payload: decodedText }) });
+        scanPhase = 'done';
+        clearScanCountdown();
+        document.getElementById('scan-time-wrap').classList.add('hidden');
         document.getElementById('scan-verify-state').classList.add('hidden');
+        document.getElementById('scan-fail-state').classList.add('hidden');
         document.getElementById('scan-success-state').classList.remove('hidden');
         await loadRecords();
         renderHome();
         renderRecordsList();
       } catch (err) {
-        document.getElementById('scan-verify-state').classList.add('hidden');
-        document.getElementById('scan-fail-text').textContent = err.message || 'Could not mark attendance.';
-        document.getElementById('scan-fail-state').classList.remove('hidden');
+        if (scanPhase === 'done') return;
+        scanPhase = 'done';
+        clearScanCountdown();
+        showScanFail(err.message || 'Could not mark attendance.');
       }
     },
     () => { }
   ).then(() => {
+    if (scanPhase !== 'scanning') {
+      safeStopScanner();
+      return;
+    }
     enablePinchToZoom();
-    beginScanCountdown(20);
   }).catch((err) => {
     toast('Camera error: ' + (err.name || err.message || err), 'error');
     closeScan();
@@ -343,27 +382,11 @@ function disablePinchToZoom() {
   pinchState = null;
 }
 
-function beginScanCountdown(seconds) {
-  const timeEl = document.getElementById('scan-time');
-  let remaining = seconds;
-  timeEl.textContent = remaining;
-  scanTimer = setInterval(() => {
-    remaining -= 1;
-    timeEl.textContent = Math.max(remaining, 0);
-    if (remaining <= 0) {
-      clearScanCountdown();
-      safeStopScanner();
-      document.getElementById('scan-camera-state').classList.add('hidden');
-      document.getElementById('scan-time-wrap').classList.add('hidden');
-      document.getElementById('scan-hint').classList.add('hidden');
-      document.getElementById('scan-fail-text').textContent = 'Time ran out. Tap the course again to retry.';
-      document.getElementById('scan-fail-state').classList.remove('hidden');
-    }
-  }, 1000);
-}
 function clearScanCountdown() { clearInterval(scanTimer); scanTimer = null; }
 
 function closeScan() {
+  scanPhase = 'done';
+  cancelFingerprintPrompt();
   clearScanCountdown();
   disablePinchToZoom();
   safeStopScanner();
