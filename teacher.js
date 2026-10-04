@@ -8,7 +8,6 @@ let selectedCourseId = null;
 let courseDataCache = null; // { total_sessions, sessions:[{id,session_date}], stats:[...] }
 
 let activeSessionId = null;
-let rotationSeconds = 6;
 let qrTimer = null;
 let pollInterval = null;
 let liveQrCodeInstance = null;
@@ -354,7 +353,7 @@ document.getElementById('btn-start-session').onclick = async () => {
   try {
     const data = await authedFetch('/api/start-session', { method: 'POST', body: JSON.stringify({ course_id: selectedCourseId }) });
     activeSessionId = data.session_id;
-    rotationSeconds = data.rotation_seconds || 6;
+    document.getElementById('qr-refresh-interval').textContent = data.rotation_seconds || 4;
     if (data.resumed) toast('Resumed the session already running for this course.', 'success');
 
     document.getElementById('live-count').textContent = '0';
