@@ -401,12 +401,13 @@ async function refreshLiveRoster() {
     if (!liveMap && document.getElementById('live-map').offsetParent) {
       // Init around IIT Jodhpur roughly
       liveMap = L.map('live-map').setView([26.4716, 73.1134], 15);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO'
       }).addTo(liveMap);
     }
-
+    
     if (liveMap) {
+      setTimeout(() => liveMap.invalidateSize(), 100);
       liveMarkers.forEach(m => m.remove());
       liveMarkers = [];
       const logHtml = [];

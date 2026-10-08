@@ -5,36 +5,36 @@
    ========================================================================== */
 
 :root {
-  color-scheme: light;
-  --bg-base: #f8fafc;
-  --bg-surface: #f1f5f9;
-  --bg-card: #ffffff;
-  --bg-raised: #ffffff;
-  --border: #cbd5e1;
-  --border-hover: #94a3b8;
-  --border-plain: #e2e8f0;
-  --text: #0f172a;
-  --text-dim: #64748b;
-  --text-faint: #94a3b8;
-  --accent: #2563eb;
-  --accent-light: #3b82f6;
-  --accent-dim: rgba(37,99,235,0.1);
-  --accent-glow: rgba(37,99,235,0.2);
-  --success: #059669;
-  --success-dim: rgba(5,150,105,0.1);
-  --success-light: #10b981;
-  --danger: #dc2626;
-  --danger-dim: rgba(220,38,38,0.1);
-  --warn: #d97706;
-  --warn-dim: rgba(217,119,6,0.1);
+  color-scheme: dark;
+  --bg-base: #09090b;
+  --bg-surface: #18181b;
+  --bg-card: #09090b;
+  --bg-raised: #27272a;
+  --border: #27272a;
+  --border-hover: #3f3f46;
+  --border-plain: #27272a;
+  --text: #fafafa;
+  --text-dim: #a1a1aa;
+  --text-faint: #52525b;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-dim: rgba(99, 102, 241, 0.15);
+  --accent-glow: rgba(99, 102, 241, 0); 
+  --success: #10b981;
+  --success-dim: rgba(16, 185, 129, 0.15);
+  --success-light: #34d399;
+  --danger: #ef4444;
+  --danger-dim: rgba(239, 68, 68, 0.15);
+  --warn: #f59e0b;
+  --warn-dim: rgba(245, 158, 11, 0.15);
   --r-sm: 6px;
   --r-md: 10px;
   --r-lg: 16px;
   --r-xl: 24px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
-  --shadow-accent: 0 0 12px var(--accent-glow);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  --shadow-accent: none;
 }
 
 /* ==========================================================================
@@ -834,4 +834,5 @@ hr.rule { border: none; border-top: 1px solid var(--border-plain); margin: 14px 
   0%   { transform: perspective(800px) rotateY(120deg) scale(0.5); opacity: 0; }
   100% { transform: perspective(800px) rotateY(0deg) scale(1); opacity: 1; }
 }
+
 
