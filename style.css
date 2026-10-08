@@ -5,59 +5,36 @@
    ========================================================================== */
 
 :root {
-  color-scheme: dark;
-  /* Depth palette */
-  --bg-base:    #080810;
-  --bg-surface: #0f0f1a;
-  --bg-card:    #13131f;
-  --bg-raised:  #1a1a2e;
-
-  /* Borders */
-  --border:       rgba(124, 58, 237, 0.2);
-  --border-hover: rgba(124, 58, 237, 0.5);
-  --border-plain: rgba(255, 255, 255, 0.07);
-
-  /* Text */
-  --text:     #f0efff;
-  --text-dim: #8a8aad;
-  --text-faint: #4a4a6a;
-
-  /* Accent — violet primary, emerald success */
-  --accent:       #7c3aed;
-  --accent-light: #a78bfa;
-  --accent-dim:   rgba(124, 58, 237, 0.15);
-  --accent-glow:  rgba(124, 58, 237, 0.35);
-
-  --success:       #10b981;
-  --success-dim:   rgba(16, 185, 129, 0.15);
-  --success-light: #34d399;
-
-  --danger:     #ef4444;
-  --danger-dim: rgba(239, 68, 68, 0.12);
-
-  --warn:     #f59e0b;
-  --warn-dim: rgba(245, 158, 11, 0.15);
-
-  /* Radius */
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.6);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.7);
-  --shadow-accent: 0 0 24px var(--accent-glow);
-
-  /* Glass */
-  --glass-bg: rgba(15, 15, 26, 0.75);
-  --glass-blur: blur(18px) saturate(1.4);
-
-  /* Fonts */
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', monospace;
+  color-scheme: light;
+  --bg-base: #f8fafc;
+  --bg-surface: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-raised: #ffffff;
+  --border: #cbd5e1;
+  --border-hover: #94a3b8;
+  --border-plain: #e2e8f0;
+  --text: #0f172a;
+  --text-dim: #64748b;
+  --text-faint: #94a3b8;
+  --accent: #2563eb;
+  --accent-light: #3b82f6;
+  --accent-dim: rgba(37,99,235,0.1);
+  --accent-glow: rgba(37,99,235,0.2);
+  --success: #059669;
+  --success-dim: rgba(5,150,105,0.1);
+  --success-light: #10b981;
+  --danger: #dc2626;
+  --danger-dim: rgba(220,38,38,0.1);
+  --warn: #d97706;
+  --warn-dim: rgba(217,119,6,0.1);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+  --shadow-accent: 0 0 12px var(--accent-glow);
 }
 
 /* ==========================================================================
@@ -123,7 +100,7 @@ button { font-family: inherit; cursor: pointer; outline: none; border: none; }
   box-shadow: var(--shadow-sm);
   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
   /* Subtle top-left spotlight */
-  background-image: radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,0.07) 0%, transparent 60%);
+  
 }
 .bento-card:hover {
   border-color: var(--border-hover);
@@ -360,7 +337,7 @@ button { font-family: inherit; cursor: pointer; outline: none; border: none; }
   font-size: 16px; /* CRITICAL: Must be at least 16px to prevent iOS Safari auto-zoom glitch */
   transition: border-color 0.2s, box-shadow 0.2s;
   appearance: none;
-  color-scheme: dark;
+  color-scheme: light;
 }
 .input:focus, .input-paper:focus {
   outline: none;
@@ -857,3 +834,4 @@ hr.rule { border: none; border-top: 1px solid var(--border-plain); margin: 14px 
   0%   { transform: perspective(800px) rotateY(120deg) scale(0.5); opacity: 0; }
   100% { transform: perspective(800px) rotateY(0deg) scale(1); opacity: 1; }
 }
+

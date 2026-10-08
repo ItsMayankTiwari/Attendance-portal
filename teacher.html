@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#030305">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f8fafc">
   <title>Attendance — Instructor Console</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
   <div id="auth-bg-canvas" style="position:fixed; inset:0; z-index:-1;"></div>
@@ -174,7 +176,6 @@
             </p>
           </div>
 
-          <!-- Counter + end button -->
           <div class="spread" style="margin-top: 20px; padding: 20px 24px; background: var(--bg-card);
                border: 1px solid var(--border-plain); border-radius: var(--r-lg);">
             <div class="counter-tile">
@@ -184,6 +185,18 @@
             <button class="btn btn-danger" id="btn-end-session" style="width: auto; padding-inline: 20px;">
               End session
             </button>
+          </div>
+
+          <div class="bento-grid" style="margin-top: 20px;">
+            <div class="bento-card" style="padding: 0; overflow: hidden; height: 300px;">
+              <div id="live-map" style="width: 100%; height: 100%; z-index: 1;"></div>
+            </div>
+            <div class="bento-card" style="max-height: 300px; overflow-y: auto;">
+              <h3 class="bento-header" style="margin-bottom: 12px; font-size: 1rem;">Live Network Log</h3>
+              <div id="live-network-log" class="stack" style="gap: 8px; font-size: 0.8rem; font-family: var(--font-mono);">
+                <div class="text-dim">Waiting for scans...</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
