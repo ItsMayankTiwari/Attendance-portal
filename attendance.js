@@ -294,7 +294,19 @@ async function startAttendance(courseId, courseName) {
         if (scanPhase !== 'verifying') return;
         const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
         if (scanPhase !== 'verifying') return;
-        await authedFetch('/api/mark-attendance', { method: 'POST', body: JSON.stringify({ response: assertion, qr_payload: decodedText }) });
+
+        // Fetch GPS for the TA's clustering map
+        const position = await new Promise((resolve) => {
+          if (!navigator.geolocation) return resolve(null);
+          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { timeout: 3000, maximumAge: 60000 });
+        });
+        const latitude = position ? position.coords.latitude : null;
+        const longitude = position ? position.coords.longitude : null;
+
+        await authedFetch('/api/mark-attendance', { 
+          method: 'POST', 
+          body: JSON.stringify({ response: assertion, qr_payload: decodedText, latitude, longitude }) 
+        });
         scanPhase = 'done';
         clearScanCountdown();
         document.getElementById('scan-time-wrap').classList.add('hidden');

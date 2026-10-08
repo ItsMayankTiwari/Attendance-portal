@@ -345,6 +345,11 @@ function stopLiveLocally() {
   clearTimeout(qrTimer); qrTimer = null;
   clearInterval(pollInterval); pollInterval = null;
   activeSessionId = null;
+  if (liveMap) {
+    liveMap.remove();
+    liveMap = null;
+    liveMarkers = [];
+  }
   renderLiveView();
 }
 
@@ -383,11 +388,56 @@ async function refreshQr() {
   qrTimer = setTimeout(refreshQr, waitMs);
 }
 
+let liveMap = null;
+let liveMarkers = [];
+
 async function refreshLiveRoster() {
   if (!activeSessionId) return;
   try {
     const records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
     document.getElementById('live-count').textContent = records.length;
+
+    // Map initialization
+    if (!liveMap && document.getElementById('live-map').offsetParent) {
+      // Init around IIT Jodhpur roughly
+      liveMap = L.map('live-map').setView([26.4716, 73.1134], 15);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }).addTo(liveMap);
+    }
+
+    if (liveMap) {
+      liveMarkers.forEach(m => m.remove());
+      liveMarkers = [];
+      const logHtml = [];
+
+      records.forEach(r => {
+        if (r.latitude && r.longitude) {
+          const m = L.circleMarker([r.latitude, r.longitude], {
+            color: 'var(--primary)',
+            fillColor: 'var(--primary)',
+            fillOpacity: 0.5,
+            radius: 5
+          }).bindPopup(r.students.roll_number).addTo(liveMap);
+          liveMarkers.push(m);
+        }
+        
+        // Build log (determine if hostel or LHC based on rough IP subnet/string for demo)
+        const ipStr = r.device_ip || 'Unknown';
+        const locationTag = (ipStr.includes('10.1.') || ipStr.startsWith('172.')) ? 'Hostel' : 'LHC/Campus';
+        logHtml.push(`<div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--border-plain); padding-bottom:4px;">
+          <span>${escapeHtml(r.students.roll_number)}</span>
+          <span style="color:var(--primary);">${ipStr} <span class="text-dim">(${locationTag})</span></span>
+        </div>`);
+      });
+
+      const logContainer = document.getElementById('live-network-log');
+      if (logHtml.length) {
+        logContainer.innerHTML = logHtml.join('');
+      } else {
+        logContainer.innerHTML = '<div class="text-dim">Waiting for scans...</div>';
+      }
+    }
   } catch (err) { /* transient */ }
 }
 
