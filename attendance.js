@@ -109,7 +109,7 @@ async function loadRecords() {
 function renderHome() {
   const donutList = document.getElementById('course-donut-list');
   if (recordsCache.length === 0) {
-    donutList.innerHTML = `<div class="ledger"><div class="empty-state"><div class="empty-icon">📭</div><p>Your attendance will show up here once classes begin.</p></div></div>`;
+    donutList.innerHTML = `<div class="ledger"><div class="empty-state"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><p>Your attendance will show up here once classes begin.</p></div></div>`;
   } else {
     donutList.innerHTML = recordsCache.map(r => `
       <div class="ledger" style="margin-bottom:12px;">
@@ -127,7 +127,7 @@ function renderHome() {
 
   const list = document.getElementById('course-list');
   if (coursesCache.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎓</div><p>No courses yet — add the code your instructor shared.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><p>No courses yet — add the code your instructor shared.</p></div>`;
     return;
   }
   list.innerHTML = coursesCache.map(c => {
@@ -157,7 +157,7 @@ function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({ '&': '&amp
 function renderRecordsList() {
   const el = document.getElementById('records-list');
   if (recordsCache.length === 0) {
-    el.innerHTML = `<div class="ledger"><div class="empty-state"><div class="empty-icon">📖</div><p>Nothing to show until your first class is recorded.</p></div></div>`;
+    el.innerHTML = `<div class="ledger"><div class="empty-state"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><p>Nothing to show until your first class is recorded.</p></div></div>`;
     return;
   }
   el.innerHTML = `<div class="ledger"><div class="ledger-body--flush">` + recordsCache.map(r => `
@@ -476,3 +476,4 @@ document.getElementById('btn-save-edit').onclick = async () => {
 };
 
 init();
+
