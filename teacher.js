@@ -339,6 +339,10 @@ function renderCoursesManageList() {
 function renderLiveView() {
   document.getElementById('live-idle').classList.toggle('hidden', !!activeSessionId);
   document.getElementById('live-active').classList.toggle('hidden', !activeSessionId);
+  if (activeSessionId) {
+    initLiveMap();
+    if (liveMap) setTimeout(() => liveMap && liveMap.invalidateSize(), 80);
+  }
 }
 
 function stopLiveLocally() {
@@ -388,58 +392,74 @@ async function refreshQr() {
   qrTimer = setTimeout(refreshQr, waitMs);
 }
 
+// ---------------------------------------------------------------- campus map
+
 let liveMap = null;
 let liveMarkers = [];
 
-async function refreshLiveRoster() {
-  if (!activeSessionId) return;
-  try {
-    const records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
-    document.getElementById('live-count').textContent = records.length;
+// IIT Jodhpur campus (Karwar). Pan/zoom is locked to this box so the map only
+// ever loads campus tiles. Nudge the numbers if the edges feel off.
+const CAMPUS_CENTER = [26.4716, 73.1134];
+const CAMPUS_BOUNDS = [[26.4596, 73.0994], [26.4836, 73.1274]]; // [[south, west], [north, east]]
 
-    // Map initialization
-    if (!liveMap && document.getElementById('live-map').offsetParent) {
-      // Init around IIT Jodhpur roughly
-      liveMap = L.map('live-map').setView([26.4716, 73.1134], 15);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO'
-      }).addTo(liveMap);
-    }
-    
-    if (liveMap) {
-      setTimeout(() => liveMap.invalidateSize(), 100);
-      liveMarkers.forEach(m => m.remove());
-      liveMarkers = [];
-      const logHtml = [];
+function initLiveMap() {
+  const el = document.getElementById('live-map');
+  if (liveMap || !el || !el.offsetParent) return;
+  liveMap = L.map('live-map', {
+    center: CAMPUS_CENTER, zoom: 16, minZoom: 15, maxZoom: 19,
+    maxBounds: CAMPUS_BOUNDS, maxBoundsViscosity: 1.0
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(liveMap);
+}
 
-      records.forEach(r => {
-        if (r.latitude && r.longitude) {
-          const m = L.circleMarker([r.latitude, r.longitude], {
-            color: 'var(--primary)',
-            fillColor: 'var(--primary)',
-            fillOpacity: 0.5,
-            radius: 5
-          }).bindPopup(r.students.roll_number).addTo(liveMap);
-          liveMarkers.push(m);
-        }
-        
-        // Build log (determine if hostel or LHC based on rough IP subnet/string for demo)
-        const ipStr = r.device_ip || 'Unknown';
-        const locationTag = (ipStr.includes('10.1.') || ipStr.startsWith('172.')) ? 'Hostel' : 'LHC/Campus';
-        logHtml.push(`<div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--border-plain); padding-bottom:4px;">
-          <span>${escapeHtml(r.students.roll_number)}</span>
-          <span style="color:var(--primary);">${ipStr} <span class="text-dim">(${locationTag})</span></span>
-        </div>`);
-      });
+function inCampus(lat, lng) {
+  return lat >= CAMPUS_BOUNDS[0][0] && lat <= CAMPUS_BOUNDS[1][0] &&
+         lng >= CAMPUS_BOUNDS[0][1] && lng <= CAMPUS_BOUNDS[1][1];
+}
 
-      const logContainer = document.getElementById('live-network-log');
-      if (logHtml.length) {
-        logContainer.innerHTML = logHtml.join('');
-      } else {
-        logContainer.innerHTML = '<div class="text-dim">Waiting for scans...</div>';
+function renderLiveMap(records) {
+  initLiveMap();
+  liveMarkers.forEach(m => m.remove());
+  liveMarkers = [];
+  const logHtml = [];
+
+  records.forEach(r => {
+    const roll = r.students ? r.students.roll_number : '—';
+    const hasGps = typeof r.latitude === 'number' && typeof r.longitude === 'number';
+    let tag = 'no GPS';
+    if (hasGps) {
+      const inside = inCampus(r.latitude, r.longitude);
+      tag = inside ? 'on campus' : 'OUTSIDE campus';
+      if (inside && liveMap) {
+        // plain hex: Leaflet writes these into SVG attributes, where var(--x) doesn't resolve
+        liveMarkers.push(
+          L.circleMarker([r.latitude, r.longitude], { color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.5, radius: 5 })
+            .bindPopup(escapeHtml(roll)).addTo(liveMap)
+        );
       }
     }
-  } catch (err) { /* transient */ }
+    logHtml.push(`<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-plain); padding-bottom:4px;">
+      <span>${escapeHtml(roll)}</span>
+      <span style="color:var(--primary);">${escapeHtml(r.device_ip || 'no IP')} <span class="text-dim">(${tag})</span></span>
+    </div>`);
+  });
+
+  document.getElementById('live-network-log').innerHTML =
+    logHtml.join('') || '<div class="text-dim">Waiting for scans...</div>';
+}
+
+async function refreshLiveRoster() {
+  if (!activeSessionId) return;
+  let records;
+  try {
+    records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
+  } catch (err) { console.error('roster fetch failed:', err); return; }
+
+  document.getElementById('live-count').textContent = records.length;
+  // map problems must never stop the counter, and must not fail silently
+  try { renderLiveMap(records); } catch (err) { console.error('map render failed:', err); }
 }
 
 document.getElementById('btn-end-session').onclick = async () => {

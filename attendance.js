@@ -257,6 +257,21 @@ function onAttemptTimeout() {
   showScanFail('Time ran out. Tap the course again to retry.');
 }
 
+// Ask for GPS *in parallel* with the server round-trip + fingerprint prompt,
+// so it adds (almost) no extra waiting. Never rejects: resolves to nulls on
+// denial / timeout / unsupported, and attendance is marked either way.
+function getLocationAsync() {
+  const none = { latitude: null, longitude: null };
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(none);
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
+      () => resolve(none),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
+    );
+  });
+}
+
 async function startAttendance(courseId, courseName) {
   if (typeof Html5Qrcode === 'undefined') { toast('Scanner failed to load. Reload and try again.', 'error'); return; }
   if (html5QrCode) return;
@@ -289,23 +304,24 @@ async function startAttendance(courseId, courseName) {
       document.getElementById('scan-hint').classList.add('hidden');
       document.getElementById('scan-verify-state').classList.remove('hidden');
 
+      const locPromise = getLocationAsync(); // runs alongside the fingerprint prompt
+
       try {
         const options = await authedFetch('/api/attendance-options', { method: 'POST', body: JSON.stringify({ qr_payload: decodedText }) });
         if (scanPhase !== 'verifying') return;
         const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
         if (scanPhase !== 'verifying') return;
 
-        // Fetch GPS for the TA's clustering map
-        const position = await new Promise((resolve) => {
-          if (!navigator.geolocation) return resolve(null);
-          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { timeout: 3000, maximumAge: 60000 });
-        });
-        const latitude = position ? position.coords.latitude : null;
-        const longitude = position ? position.coords.longitude : null;
+        // Location has been resolving since the QR was decoded; give it at most
+        // 2 more seconds so a slow GPS fix can never hold up attendance.
+        const { latitude, longitude } = await Promise.race([
+          locPromise,
+          new Promise((r) => setTimeout(() => r({ latitude: null, longitude: null }), 2000))
+        ]);
 
-        await authedFetch('/api/mark-attendance', { 
-          method: 'POST', 
-          body: JSON.stringify({ response: assertion, qr_payload: decodedText, latitude, longitude }) 
+        await authedFetch('/api/mark-attendance', {
+          method: 'POST',
+          body: JSON.stringify({ response: assertion, qr_payload: decodedText, latitude, longitude })
         });
         scanPhase = 'done';
         clearScanCountdown();
