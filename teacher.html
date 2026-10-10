@@ -12,7 +12,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-  <style>#grid-content.bento-card:hover { transform: none; }</style>
+  <style>
+    #tview-map .bento-card:hover { transform: none; }
+    .osm-dark { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }
+    .loc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border-plain);
+                border-radius: 999px; font-size: 0.78rem; cursor: pointer; user-select: none; }
+    .loc-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  </style>
 </head>
 <body>
   <div id="auth-bg-canvas" style="position:fixed; inset:0; z-index:-1;"></div>
@@ -45,6 +51,7 @@
       <button class="navrail-item is-active" data-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> Class Overview</button>
       <button class="navrail-item" data-view="grid"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Attendance Sheet</button>
       <button class="navrail-item" data-view="live"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg> Live Session</button>
+      <button class="navrail-item" data-view="map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Location Map</button>
       <button class="navrail-item" data-view="courses"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Manage Courses</button>
       <div style="flex: 1;"></div>
       <div style="padding: 10px 14px; font-size: clamp(0.7rem, 1.2vw, 0.78rem); color: var(--text-dim);" id="user-badge"></div>
@@ -149,15 +156,6 @@
           <div class="grid-scroll" style="padding: 0;">
             <table class="grid-table" id="lecture-grid-table"></table>
           </div>
-          <div id="session-map-section" style="padding: 16px 18px; border-top: 1px solid var(--border-plain);">
-            <div class="spread" style="margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-              <h3 class="bento-header" style="margin: 0; font-size: 1rem;">Scan locations — selected lecture</h3>
-              <span class="text-dim mono" id="session-map-summary" style="font-size: 0.78rem;"></span>
-            </div>
-            <p class="text-dim" id="session-map-note" style="font-size: 0.85rem; margin-bottom: 10px;"></p>
-            <div id="session-map" class="hidden" style="width: 100%; height: 360px; border-radius: 12px; overflow: hidden; z-index: 1;"></div>
-            <div id="session-map-log" class="stack" style="gap: 8px; font-size: 0.8rem; font-family: var(--font-mono); margin-top: 12px; max-height: 240px; overflow-y: auto;"></div>
-          </div>
         </div>
       </div>
 
@@ -195,6 +193,44 @@
             <button class="btn btn-danger" id="btn-end-session" style="width: auto; padding-inline: 20px;">
               End session
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- LOCATION MAP (all finished lectures) ---- -->
+      <div class="teacher-view" id="tview-map">
+        <div id="map-empty" class="bento-card" style="text-align: center; padding: 48px 20px;">
+          <p class="text-dim" id="map-empty-msg">Loading…</p>
+        </div>
+
+        <div id="map-content" class="hidden">
+          <div class="bento-card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
+            <div class="ledger-head" style="flex-wrap: wrap; gap: 10px;">
+              <h3>Scan locations — all finished lectures</h3>
+              <span class="meta" id="map-summary"></span>
+              <span style="display: flex; gap: 14px;">
+                <button class="link-btn" id="btn-map-refresh">Refresh</button>
+                <button class="link-btn" id="btn-map-export">Export CSV</button>
+              </span>
+            </div>
+            <div style="padding: 12px 18px; border-bottom: 1px solid var(--border-plain);">
+              <div style="display: flex; gap: 14px; margin-bottom: 10px;">
+                <button class="link-btn" id="btn-map-all" style="padding-left: 0;">Show all</button>
+                <button class="link-btn" id="btn-map-none">Hide all</button>
+              </div>
+              <div id="map-legend" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+            <div id="all-sessions-map" style="width: 100%; height: 520px; z-index: 1;"></div>
+          </div>
+
+          <div class="bento-card" style="padding: 0; overflow: hidden;">
+            <div class="ledger-head"><h3>IP addresses seen</h3><span class="meta">top 15 by scans</span></div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead><tr><th>IP</th><th class="num">Scans</th><th class="num">Students</th></tr></thead>
+                <tbody id="map-ip-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

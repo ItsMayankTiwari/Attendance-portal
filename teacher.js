@@ -81,7 +81,7 @@ document.querySelectorAll('.navrail-item[data-view]').forEach(btn => {
   btn.onclick = () => switchView(btn.dataset.view);
 });
 
-const titles = { overview: 'Class Overview', grid: 'Attendance Sheet', live: 'Live session', courses: 'Manage courses' };
+const titles = { overview: 'Class Overview', grid: 'Attendance Sheet', live: 'Live session', map: 'Location Map', courses: 'Manage courses' };
 
 function switchView(name) {
   document.querySelectorAll('.navrail-item[data-view]').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
@@ -90,7 +90,7 @@ function switchView(name) {
   document.getElementById('page-title').textContent = titles[name];
   document.getElementById('course-select').style.visibility = name === 'courses' ? 'hidden' : 'visible';
   if (name === 'live') renderLiveView();
-  if (name === 'grid') refreshSessionMap();
+  if (name === 'map') loadLocationMap();
 }
 
 function showEmptyStates() {
@@ -112,6 +112,8 @@ async function loadCourseData() {
   }
   renderOverview();
   renderGrid();
+  locData = null; // attendance changed: reload map data next time it is opened
+  if (document.getElementById('tview-map').classList.contains('is-active')) loadLocationMap();
 }
 
 function renderOverview() {
@@ -221,8 +223,6 @@ function renderGrid() {
   const sel = document.getElementById('grid-session-select');
   const mostRecentFirst = sorted.slice().reverse();
   sel.innerHTML = mostRecentFirst.map(s => `<option value="${s.id}">${formatDate(s.session_date)}</option>`).join('');
-  sel.onchange = refreshSessionMap;
-  if (document.getElementById('tview-grid').classList.contains('is-active')) refreshSessionMap();
 
   const head = `<thead><tr><th>Student</th>${sorted.map(s => `<th>${formatDate(s.session_date).slice(0, 6)}</th>`).join('')}</tr></thead>`;
   const body = `<tbody>` + stats.slice().sort((a, b) => a.roll_number.localeCompare(b.roll_number)).map(s => {
@@ -386,7 +386,168 @@ async function refreshQr() {
   qrTimer = setTimeout(refreshQr, waitMs);
 }
 
-// ---------------------------------------------------------------- live roster (count only — no locations while live)
+// ---------------------------------------------------------------- location map (all finished lectures, one tab)
+
+// IIT Jodhpur campus (Karwar). Pan/zoom is locked to this box so only campus
+// tiles are ever loaded. Nudge the numbers if the edges feel off.
+const CAMPUS_CENTER = [26.4716, 73.1134];
+const CAMPUS_BOUNDS = [[26.4596, 73.0994], [26.4836, 73.1274]]; // [[south, west], [north, east]]
+const LECTURE_COLORS = ['#7c3aed', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#ec4899', '#14b8a6', '#a3e635', '#f97316', '#8b5cf6'];
+
+let locMap = null;
+let locGroups = [];   // one L.layerGroup per lecture
+let locData = null;   // { sessions:[{id,date}], points:[[sessionIdx, lat, lng, roll, ip]], truncated }
+let locCourseId = null;
+let locSeq = 0;
+
+function inCampus(lat, lng) {
+  return lat >= CAMPUS_BOUNDS[0][0] && lat <= CAMPUS_BOUNDS[1][0] &&
+         lng >= CAMPUS_BOUNDS[0][1] && lng <= CAMPUS_BOUNDS[1][1];
+}
+
+function initLocMap() {
+  const el = document.getElementById('all-sessions-map');
+  if (locMap || !el || !el.offsetParent) return;
+  locMap = L.map('all-sessions-map', {
+    center: CAMPUS_CENTER, zoom: 16, minZoom: 15, maxZoom: 19,
+    maxBounds: CAMPUS_BOUNDS, maxBoundsViscosity: 1.0, preferCanvas: true
+  });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, className: 'osm-dark', referrerPolicy: 'origin',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(locMap);
+}
+
+function lectureLabel(sess) { return `${formatDate(sess.date)} ${formatTime(sess.date)}`; }
+
+function setLocEmpty(msg) {
+  document.getElementById('map-empty-msg').textContent = msg;
+  document.getElementById('map-empty').classList.remove('hidden');
+  document.getElementById('map-content').classList.add('hidden');
+}
+
+async function loadLocationMap(force) {
+  if (!selectedCourseId) { setLocEmpty('Select or create a course first.'); return; }
+
+  // already loaded for this course: just redraw (the map needs a visible container)
+  if (!force && locData && locCourseId === selectedCourseId) { showLocationMap(); return; }
+
+  const seq = ++locSeq;
+  setLocEmpty('Loading…');
+  let data;
+  try {
+    data = await authedFetch(`/api/course-locations?course_id=${encodeURIComponent(selectedCourseId)}`);
+  } catch (err) {
+    if (seq === locSeq) setLocEmpty(err.message);
+    return;
+  }
+  if (seq !== locSeq) return; // course changed while loading
+  locData = data;
+  locCourseId = selectedCourseId;
+  showLocationMap(true);
+}
+
+function showLocationMap(rebuildLegend) {
+  if (!locData.sessions.length) { setLocEmpty('No finished lectures yet. Locations appear here after a session ends.'); return; }
+  if (typeof L === 'undefined') { setLocEmpty('The map library failed to load. Reload the page.'); return; }
+
+  document.getElementById('map-empty').classList.add('hidden');
+  document.getElementById('map-content').classList.remove('hidden');
+  initLocMap();
+  if (!locMap) return;
+
+  if (rebuildLegend !== false) buildLegend();
+  drawLocationMap();
+  renderIpTable();
+  setTimeout(() => locMap && locMap.invalidateSize(), 100);
+}
+
+function buildLegend() {
+  const legend = document.getElementById('map-legend');
+  legend.innerHTML = locData.sessions.map((sess, i) => `
+    <label class="loc-chip">
+      <input type="checkbox" data-sess="${i}" checked>
+      <span class="loc-swatch" style="background:${LECTURE_COLORS[i % LECTURE_COLORS.length]};"></span>
+      ${escapeHtml(lectureLabel(sess))}
+    </label>`).join('');
+  legend.querySelectorAll('input[data-sess]').forEach(box => {
+    box.onchange = () => {
+      const g = locGroups[+box.dataset.sess];
+      if (!g || !locMap) return;
+      if (box.checked) g.addTo(locMap); else g.remove();
+    };
+  });
+}
+
+function drawLocationMap() {
+  locGroups.forEach(g => g.remove());
+  locGroups = locData.sessions.map(() => L.layerGroup());
+
+  let withGps = 0, outside = 0;
+  locData.points.forEach(([i, lat, lng, roll, ip]) => {
+    if (typeof lat !== 'number' || typeof lng !== 'number') return;
+    withGps++;
+    if (!inCampus(lat, lng)) { outside++; return; }
+    const color = LECTURE_COLORS[i % LECTURE_COLORS.length];
+    // plain hex: Leaflet writes these into SVG/canvas, where var(--x) doesn't resolve
+    L.circleMarker([lat, lng], { color, fillColor: color, fillOpacity: 0.55, radius: 5, weight: 1 })
+      .bindPopup(`${escapeHtml(roll)}<br>${escapeHtml(ip || 'no IP')}<br>${escapeHtml(lectureLabel(locData.sessions[i]))}`)
+      .addTo(locGroups[i]);
+  });
+
+  document.querySelectorAll('#map-legend input[data-sess]').forEach(box => {
+    if (box.checked) locGroups[+box.dataset.sess].addTo(locMap);
+  });
+
+  document.getElementById('map-summary').textContent =
+    `${locData.sessions.length} lectures · ${locData.points.length} scans · ${withGps} with GPS` +
+    (outside ? ` · ${outside} outside campus` : '') +
+    (locData.truncated ? ' · list truncated' : '');
+}
+
+function renderIpTable() {
+  const byIp = new Map();
+  locData.points.forEach(([, , , roll, ip]) => {
+    const key = ip || 'no IP';
+    if (!byIp.has(key)) byIp.set(key, { scans: 0, students: new Set() });
+    const e = byIp.get(key);
+    e.scans++; e.students.add(roll);
+  });
+  const rows = [...byIp.entries()].sort((a, b) => b[1].scans - a[1].scans).slice(0, 15);
+  document.getElementById('map-ip-body').innerHTML = rows.map(([ip, e]) =>
+    `<tr><td class="mono">${escapeHtml(ip)}</td><td class="num">${e.scans}</td><td class="num">${e.students.size}</td></tr>`
+  ).join('');
+}
+
+function setAllLectures(on) {
+  document.querySelectorAll('#map-legend input[data-sess]').forEach(box => {
+    if (box.checked !== on) { box.checked = on; box.onchange(); }
+  });
+}
+
+function exportLocationCsv() {
+  if (!locData) return;
+  const cell = v => {
+    let t = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; // stop spreadsheet formula injection
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  const lines = [['Lecture', 'Roll Number', 'Latitude', 'Longitude', 'IP'].map(cell).join(',')];
+  locData.points.forEach(([i, lat, lng, roll, ip]) =>
+    lines.push([lectureLabel(locData.sessions[i]), roll, lat, lng, ip].map(cell).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+  a.download = 'scan-locations.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+document.getElementById('btn-map-refresh').onclick = () => loadLocationMap(true);
+document.getElementById('btn-map-export').onclick = exportLocationCsv;
+document.getElementById('btn-map-all').onclick = () => setAllLectures(true);
+document.getElementById('btn-map-none').onclick = () => setAllLectures(false);
+
+// ---------------------------------------------------------------- live roster (count only, never locations)
 
 async function refreshLiveRoster() {
   if (!activeSessionId) return;
@@ -396,110 +557,13 @@ async function refreshLiveRoster() {
   } catch (err) { console.error('roster fetch failed:', err); }
 }
 
-// ---------------------------------------------------------------- scan-location map (ended sessions only)
-
-let sessionMap = null;
-let sessionMarkers = [];
-let mapRequestSeq = 0;
-
-// IIT Jodhpur campus (Karwar). Pan/zoom is locked to this box so only campus
-// tiles are ever loaded. Nudge the numbers if the edges feel off.
-const CAMPUS_CENTER = [26.4716, 73.1134];
-const CAMPUS_BOUNDS = [[26.4596, 73.0994], [26.4836, 73.1274]]; // [[south, west], [north, east]]
-
-function inCampus(lat, lng) {
-  return lat >= CAMPUS_BOUNDS[0][0] && lat <= CAMPUS_BOUNDS[1][0] &&
-         lng >= CAMPUS_BOUNDS[0][1] && lng <= CAMPUS_BOUNDS[1][1];
-}
-
-function initSessionMap() {
-  const el = document.getElementById('session-map');
-  if (sessionMap || !el || !el.offsetParent) return;
-  sessionMap = L.map('session-map', {
-    center: CAMPUS_CENTER, zoom: 16, minZoom: 15, maxZoom: 19,
-    maxBounds: CAMPUS_BOUNDS, maxBoundsViscosity: 1.0
-  });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
-  }).addTo(sessionMap);
-}
-
-async function refreshSessionMap() {
-  const sel = document.getElementById('grid-session-select');
-  const mapEl = document.getElementById('session-map');
-  const noteEl = document.getElementById('session-map-note');
-  const logEl = document.getElementById('session-map-log');
-  const sumEl = document.getElementById('session-map-summary');
-  if (!sel || !sel.value) return;
-
-  const hideMap = (msg) => {
-    mapEl.classList.add('hidden');
-    logEl.innerHTML = '';
-    sumEl.textContent = '';
-    noteEl.textContent = msg;
-  };
-
-  // nothing about locations is shown for a session that is still running
-  if (sel.value === activeSessionId) { hideMap('This lecture is still live. Locations appear here after you end the session.'); return; }
-  if (typeof L === 'undefined') { hideMap('The map library failed to load. Reload the page.'); return; }
-
-  const seq = ++mapRequestSeq;
-  noteEl.textContent = 'Loading…';
-  let records;
-  try {
-    records = await authedFetch(`/api/session-attendance?session_id=${encodeURIComponent(sel.value)}&locations=1`);
-  } catch (err) {
-    if (seq === mapRequestSeq) hideMap(err.message);
-    return;
-  }
-  if (seq !== mapRequestSeq) return; // user picked another lecture meanwhile
-
-  mapEl.classList.remove('hidden');
-  initSessionMap();
-  if (!sessionMap) { hideMap('Could not draw the map.'); return; }
-  setTimeout(() => sessionMap && sessionMap.invalidateSize(), 100);
-
-  sessionMarkers.forEach(m => m.remove());
-  sessionMarkers = [];
-
-  let withGps = 0, outside = 0;
-  const rows = records.map(r => {
-    const roll = r.students ? r.students.roll_number : '—';
-    const hasGps = typeof r.latitude === 'number' && typeof r.longitude === 'number';
-    let tag = 'no GPS';
-    if (hasGps) {
-      withGps++;
-      if (inCampus(r.latitude, r.longitude)) {
-        tag = 'on campus';
-        // plain hex: Leaflet writes these into SVG attributes, where var(--x) doesn't resolve
-        sessionMarkers.push(
-          L.circleMarker([r.latitude, r.longitude], { color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.5, radius: 5 })
-            .bindPopup(escapeHtml(roll)).addTo(sessionMap)
-        );
-      } else { tag = 'OUTSIDE campus'; outside++; }
-    }
-    return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-plain); padding-bottom:4px;">
-      <span>${escapeHtml(roll)}</span>
-      <span style="color:var(--primary);">${escapeHtml(r.device_ip || 'no IP')} <span class="text-dim">(${tag})</span></span>
-    </div>`;
-  });
-
-  noteEl.textContent = records.length ? '' : 'Nobody scanned in this lecture.';
-  sumEl.textContent = `${records.length} present · ${withGps} with GPS` + (outside ? ` · ${outside} outside campus` : '');
-  logEl.innerHTML = rows.join('');
-}
-
 document.getElementById('btn-end-session').onclick = async () => {
   const ok = await confirmSheet({ title: 'End this session?', body: 'Students will no longer be able to scan in.', confirmLabel: 'End session', danger: true });
   if (!ok) return;
   try { await authedFetch('/api/end-session', { method: 'POST', body: JSON.stringify({ session_id: activeSessionId }) }); }
   catch (err) { toast(err.message, 'error'); return; }
-  const endedId = activeSessionId;
   stopLiveLocally();
   await loadCourseData();
-  const sel = document.getElementById('grid-session-select');
-  if (sel && endedId && [...sel.options].some(o => o.value === endedId)) sel.value = endedId;
-  switchView('grid');
 };
 
 init();

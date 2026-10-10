@@ -11,6 +11,7 @@ let scanTimer = null;
 let editToken = null;
 const ATTEMPT_SECONDS = 30;
 let scanPhase = 'idle';
+let locPromise = null; // GPS request started when the scanner opens
 let attemptEndsAt = 0;
 
 function show(id) {
@@ -266,8 +267,8 @@ function getLocationAsync() {
     if (!navigator.geolocation) return resolve(none);
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
-      () => resolve(none),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
+      (e) => { console.warn('geolocation unavailable:', e && e.code, e && e.message); resolve(none); },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 }
     );
   });
 }
@@ -286,6 +287,7 @@ async function startAttendance(courseId, courseName) {
   show('screen-scan');
 
   scanPhase = 'scanning';
+  locPromise = getLocationAsync(); // warm up GPS while the student aims at the QR
   beginAttemptCountdown();
 
   html5QrCode = new Html5Qrcode('reader');
@@ -304,7 +306,7 @@ async function startAttendance(courseId, courseName) {
       document.getElementById('scan-hint').classList.add('hidden');
       document.getElementById('scan-verify-state').classList.remove('hidden');
 
-      const locPromise = getLocationAsync(); // runs alongside the fingerprint prompt
+      const locNow = locPromise || getLocationAsync(); // normally already resolved by now
 
       try {
         const options = await authedFetch('/api/attendance-options', { method: 'POST', body: JSON.stringify({ qr_payload: decodedText }) });
@@ -315,7 +317,7 @@ async function startAttendance(courseId, courseName) {
         // Location has been resolving since the QR was decoded; give it at most
         // 2 more seconds so a slow GPS fix can never hold up attendance.
         const { latitude, longitude } = await Promise.race([
-          locPromise,
+          locNow,
           new Promise((r) => setTimeout(() => r({ latitude: null, longitude: null }), 2000))
         ]);
 
@@ -492,4 +494,3 @@ document.getElementById('btn-save-edit').onclick = async () => {
 };
 
 init();
-
