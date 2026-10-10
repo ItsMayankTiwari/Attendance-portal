@@ -90,6 +90,7 @@ function switchView(name) {
   document.getElementById('page-title').textContent = titles[name];
   document.getElementById('course-select').style.visibility = name === 'courses' ? 'hidden' : 'visible';
   if (name === 'live') renderLiveView();
+  if (name === 'grid') refreshSessionMap();
 }
 
 function showEmptyStates() {
@@ -220,6 +221,8 @@ function renderGrid() {
   const sel = document.getElementById('grid-session-select');
   const mostRecentFirst = sorted.slice().reverse();
   sel.innerHTML = mostRecentFirst.map(s => `<option value="${s.id}">${formatDate(s.session_date)}</option>`).join('');
+  sel.onchange = refreshSessionMap;
+  if (document.getElementById('tview-grid').classList.contains('is-active')) refreshSessionMap();
 
   const head = `<thead><tr><th>Student</th>${sorted.map(s => `<th>${formatDate(s.session_date).slice(0, 6)}</th>`).join('')}</tr></thead>`;
   const body = `<tbody>` + stats.slice().sort((a, b) => a.roll_number.localeCompare(b.roll_number)).map(s => {
@@ -339,21 +342,12 @@ function renderCoursesManageList() {
 function renderLiveView() {
   document.getElementById('live-idle').classList.toggle('hidden', !!activeSessionId);
   document.getElementById('live-active').classList.toggle('hidden', !activeSessionId);
-  if (activeSessionId) {
-    initLiveMap();
-    if (liveMap) setTimeout(() => liveMap && liveMap.invalidateSize(), 80);
-  }
 }
 
 function stopLiveLocally() {
   clearTimeout(qrTimer); qrTimer = null;
   clearInterval(pollInterval); pollInterval = null;
   activeSessionId = null;
-  if (liveMap) {
-    liveMap.remove();
-    liveMap = null;
-    liveMarkers = [];
-  }
   renderLiveView();
 }
 
@@ -392,74 +386,107 @@ async function refreshQr() {
   qrTimer = setTimeout(refreshQr, waitMs);
 }
 
-// ---------------------------------------------------------------- campus map
+// ---------------------------------------------------------------- live roster (count only — no locations while live)
 
-let liveMap = null;
-let liveMarkers = [];
+async function refreshLiveRoster() {
+  if (!activeSessionId) return;
+  try {
+    const records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
+    document.getElementById('live-count').textContent = records.length;
+  } catch (err) { console.error('roster fetch failed:', err); }
+}
 
-// IIT Jodhpur campus (Karwar). Pan/zoom is locked to this box so the map only
-// ever loads campus tiles. Nudge the numbers if the edges feel off.
+// ---------------------------------------------------------------- scan-location map (ended sessions only)
+
+let sessionMap = null;
+let sessionMarkers = [];
+let mapRequestSeq = 0;
+
+// IIT Jodhpur campus (Karwar). Pan/zoom is locked to this box so only campus
+// tiles are ever loaded. Nudge the numbers if the edges feel off.
 const CAMPUS_CENTER = [26.4716, 73.1134];
 const CAMPUS_BOUNDS = [[26.4596, 73.0994], [26.4836, 73.1274]]; // [[south, west], [north, east]]
-
-function initLiveMap() {
-  const el = document.getElementById('live-map');
-  if (liveMap || !el || !el.offsetParent) return;
-  liveMap = L.map('live-map', {
-    center: CAMPUS_CENTER, zoom: 16, minZoom: 15, maxZoom: 19,
-    maxBounds: CAMPUS_BOUNDS, maxBoundsViscosity: 1.0
-  });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
-  }).addTo(liveMap);
-}
 
 function inCampus(lat, lng) {
   return lat >= CAMPUS_BOUNDS[0][0] && lat <= CAMPUS_BOUNDS[1][0] &&
          lng >= CAMPUS_BOUNDS[0][1] && lng <= CAMPUS_BOUNDS[1][1];
 }
 
-function renderLiveMap(records) {
-  initLiveMap();
-  liveMarkers.forEach(m => m.remove());
-  liveMarkers = [];
-  const logHtml = [];
+function initSessionMap() {
+  const el = document.getElementById('session-map');
+  if (sessionMap || !el || !el.offsetParent) return;
+  sessionMap = L.map('session-map', {
+    center: CAMPUS_CENTER, zoom: 16, minZoom: 15, maxZoom: 19,
+    maxBounds: CAMPUS_BOUNDS, maxBoundsViscosity: 1.0
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(sessionMap);
+}
 
-  records.forEach(r => {
+async function refreshSessionMap() {
+  const sel = document.getElementById('grid-session-select');
+  const mapEl = document.getElementById('session-map');
+  const noteEl = document.getElementById('session-map-note');
+  const logEl = document.getElementById('session-map-log');
+  const sumEl = document.getElementById('session-map-summary');
+  if (!sel || !sel.value) return;
+
+  const hideMap = (msg) => {
+    mapEl.classList.add('hidden');
+    logEl.innerHTML = '';
+    sumEl.textContent = '';
+    noteEl.textContent = msg;
+  };
+
+  // nothing about locations is shown for a session that is still running
+  if (sel.value === activeSessionId) { hideMap('This lecture is still live. Locations appear here after you end the session.'); return; }
+  if (typeof L === 'undefined') { hideMap('The map library failed to load. Reload the page.'); return; }
+
+  const seq = ++mapRequestSeq;
+  noteEl.textContent = 'Loading…';
+  let records;
+  try {
+    records = await authedFetch(`/api/session-attendance?session_id=${encodeURIComponent(sel.value)}&locations=1`);
+  } catch (err) {
+    if (seq === mapRequestSeq) hideMap(err.message);
+    return;
+  }
+  if (seq !== mapRequestSeq) return; // user picked another lecture meanwhile
+
+  mapEl.classList.remove('hidden');
+  initSessionMap();
+  if (!sessionMap) { hideMap('Could not draw the map.'); return; }
+  setTimeout(() => sessionMap && sessionMap.invalidateSize(), 100);
+
+  sessionMarkers.forEach(m => m.remove());
+  sessionMarkers = [];
+
+  let withGps = 0, outside = 0;
+  const rows = records.map(r => {
     const roll = r.students ? r.students.roll_number : '—';
     const hasGps = typeof r.latitude === 'number' && typeof r.longitude === 'number';
     let tag = 'no GPS';
     if (hasGps) {
-      const inside = inCampus(r.latitude, r.longitude);
-      tag = inside ? 'on campus' : 'OUTSIDE campus';
-      if (inside && liveMap) {
+      withGps++;
+      if (inCampus(r.latitude, r.longitude)) {
+        tag = 'on campus';
         // plain hex: Leaflet writes these into SVG attributes, where var(--x) doesn't resolve
-        liveMarkers.push(
+        sessionMarkers.push(
           L.circleMarker([r.latitude, r.longitude], { color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.5, radius: 5 })
-            .bindPopup(escapeHtml(roll)).addTo(liveMap)
+            .bindPopup(escapeHtml(roll)).addTo(sessionMap)
         );
-      }
+      } else { tag = 'OUTSIDE campus'; outside++; }
     }
-    logHtml.push(`<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-plain); padding-bottom:4px;">
+    return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-plain); padding-bottom:4px;">
       <span>${escapeHtml(roll)}</span>
       <span style="color:var(--primary);">${escapeHtml(r.device_ip || 'no IP')} <span class="text-dim">(${tag})</span></span>
-    </div>`);
+    </div>`;
   });
 
-  document.getElementById('live-network-log').innerHTML =
-    logHtml.join('') || '<div class="text-dim">Waiting for scans...</div>';
-}
-
-async function refreshLiveRoster() {
-  if (!activeSessionId) return;
-  let records;
-  try {
-    records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
-  } catch (err) { console.error('roster fetch failed:', err); return; }
-
-  document.getElementById('live-count').textContent = records.length;
-  // map problems must never stop the counter, and must not fail silently
-  try { renderLiveMap(records); } catch (err) { console.error('map render failed:', err); }
+  noteEl.textContent = records.length ? '' : 'Nobody scanned in this lecture.';
+  sumEl.textContent = `${records.length} present · ${withGps} with GPS` + (outside ? ` · ${outside} outside campus` : '');
+  logEl.innerHTML = rows.join('');
 }
 
 document.getElementById('btn-end-session').onclick = async () => {
@@ -467,8 +494,12 @@ document.getElementById('btn-end-session').onclick = async () => {
   if (!ok) return;
   try { await authedFetch('/api/end-session', { method: 'POST', body: JSON.stringify({ session_id: activeSessionId }) }); }
   catch (err) { toast(err.message, 'error'); return; }
+  const endedId = activeSessionId;
   stopLiveLocally();
   await loadCourseData();
+  const sel = document.getElementById('grid-session-select');
+  if (sel && endedId && [...sel.options].some(o => o.value === endedId)) sel.value = endedId;
+  switchView('grid');
 };
 
 init();
