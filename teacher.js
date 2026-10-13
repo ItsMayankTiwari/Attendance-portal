@@ -356,7 +356,7 @@ document.getElementById('btn-start-session').onclick = async () => {
   try {
     const data = await authedFetch('/api/start-session', { method: 'POST', body: JSON.stringify({ course_id: selectedCourseId }) });
     activeSessionId = data.session_id;
-    document.getElementById('qr-refresh-interval').textContent = data.rotation_seconds || 6;
+    document.getElementById('qr-refresh-interval').textContent = data.rotation_seconds || 4;
     if (data.resumed) toast('Resumed the session already running for this course.', 'success');
 
     document.getElementById('live-count').textContent = '0';
@@ -398,7 +398,7 @@ let locSeq = 0;
 
 function initLocMap() {
   const el = document.getElementById('all-sessions-map');
-  if (locMap || !el || !el.offsetParent) return;
+  if (locMap || !el) return;
   locMap = L.map('all-sessions-map', {
     center: CAMPUS_CENTER, zoom: 16, minZoom: 14, maxZoom: 19,
     scrollWheelZoom: true, dragging: true, touchZoom: true,
@@ -436,7 +436,10 @@ async function loadLocationMap(force) {
 }
 
 function showLocationMap(rebuild) {
-  if (!locData.sessions.length) { setLocEmpty('No finished lectures yet. Locations appear here after a session ends.'); return; }
+  if (!locData || !locData.sessions || !locData.sessions.length) {
+    setLocEmpty('No lectures found for this course yet.');
+    return;
+  }
   if (typeof L === 'undefined') { setLocEmpty('The map library failed to load. Reload the page.'); return; }
 
   document.getElementById('map-empty').classList.add('hidden');
@@ -444,17 +447,19 @@ function showLocationMap(rebuild) {
   initLocMap();
   if (!locMap) return;
 
-  if (rebuild) buildSessionSelect();
+  buildSessionSelect();
   drawSelectedSession();
-  setTimeout(() => locMap && locMap.invalidateSize(), 150);
+  setTimeout(() => locMap && locMap.invalidateSize(), 200);
 }
 
 function buildSessionSelect() {
   const sel = document.getElementById('map-session-select');
+  if (!sel || !locData || !locData.sessions) return;
   const reversed = locData.sessions.slice().reverse();
   sel.innerHTML = reversed.map((s, ri) => {
     const i = locData.sessions.length - 1 - ri;
-    return `<option value="${i}">${formatDate(s.date)}</option>`;
+    const label = `${formatDate(s.date)}${s.is_live ? ' (Live)' : ''}`;
+    return `<option value="${i}">${label}</option>`;
   }).join('');
   sel.onchange = () => drawSelectedSession();
 }
