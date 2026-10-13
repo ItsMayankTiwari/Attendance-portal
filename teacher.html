@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
   <style>
@@ -21,7 +20,6 @@
   </style>
 </head>
 <body>
-  <div id="auth-bg-canvas" style="position:fixed; inset:0; z-index:-1;"></div>
 
   <!-- ============ LOADING ============ -->
   <div class="screen is-active" id="screen-loading">
@@ -180,7 +178,7 @@
               <div id="qr-box"></div>
             </div>
             <p class="text-dim" style="font-size: clamp(0.72rem, 1.3vw, 0.82rem); letter-spacing: 0.05em; text-transform: uppercase;">
-              Refreshes every <span id="qr-refresh-interval">4</span> s — project on classroom screen
+              Refreshes every <span id="qr-refresh-interval">6</span> s — project on classroom screen
             </p>
           </div>
 
@@ -197,7 +195,7 @@
         </div>
       </div>
 
-      <!-- ---- LOCATION MAP (all finished lectures) ---- -->
+      <!-- ---- LOCATION MAP ---- -->
       <div class="teacher-view" id="tview-map">
         <div id="map-empty" class="bento-card" style="text-align: center; padding: 48px 20px;">
           <p class="text-dim" id="map-empty-msg">Loading…</p>
@@ -206,31 +204,15 @@
         <div id="map-content" class="hidden">
           <div class="bento-card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
             <div class="ledger-head" style="flex-wrap: wrap; gap: 10px;">
-              <h3>Scan locations — all finished lectures</h3>
+              <h3>Scan locations</h3>
               <span class="meta" id="map-summary"></span>
-              <span style="display: flex; gap: 14px;">
+              <span style="display: flex; gap: 14px; align-items: center;">
+                <select class="input input-paper" id="map-session-select" style="width: auto; min-width: 180px;"></select>
                 <button class="link-btn" id="btn-map-refresh">Refresh</button>
                 <button class="link-btn" id="btn-map-export">Export CSV</button>
               </span>
             </div>
-            <div style="padding: 12px 18px; border-bottom: 1px solid var(--border-plain);">
-              <div style="display: flex; gap: 14px; margin-bottom: 10px;">
-                <button class="link-btn" id="btn-map-all" style="padding-left: 0;">Show all</button>
-                <button class="link-btn" id="btn-map-none">Hide all</button>
-              </div>
-              <div id="map-legend" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-            </div>
             <div id="all-sessions-map" style="width: 100%; height: 520px; z-index: 1;"></div>
-          </div>
-
-          <div class="bento-card" style="padding: 0; overflow: hidden;">
-            <div class="ledger-head"><h3>IP addresses seen</h3><span class="meta">top 15 by scans</span></div>
-            <div style="overflow-x: auto;">
-              <table class="data-table">
-                <thead><tr><th>IP</th><th class="num">Scans</th><th class="num">Students</th></tr></thead>
-                <tbody id="map-ip-body"></tbody>
-              </table>
-            </div>
           </div>
         </div>
       </div>
@@ -263,7 +245,5 @@
 
   <script src="shared.js"></script>
   <script src="teacher.js"></script>
-  <script src="ui-fx.js"></script>
-  <script src="auth-bg.js"></script>
 </body>
 </html>
