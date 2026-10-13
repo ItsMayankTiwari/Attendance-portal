@@ -132,7 +132,7 @@ function renderOverview() {
 
   const panel = document.getElementById('at-risk-panel');
   if (atRisk.length === 0) {
-    panel.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><p>No one is below 75% right now.</p></div>`;
+    panel.innerHTML = `<div class="empty-state"><p>No one is below 75 % right now.</p></div>`;
   } else {
     panel.innerHTML = `<div class="ledger-head"><h3>Below 75%</h3><span class="meta">${atRisk.length} student${atRisk.length === 1 ? '' : 's'}</span></div>
       <div class="ledger-body--flush">` + atRisk.map(s => `
@@ -356,7 +356,7 @@ document.getElementById('btn-start-session').onclick = async () => {
   try {
     const data = await authedFetch('/api/start-session', { method: 'POST', body: JSON.stringify({ course_id: selectedCourseId }) });
     activeSessionId = data.session_id;
-    document.getElementById('qr-refresh-interval').textContent = data.rotation_seconds || 4;
+    document.getElementById('qr-refresh-interval').textContent = data.rotation_seconds || 6;
     if (data.resumed) toast('Resumed the session already running for this course.', 'success');
 
     document.getElementById('live-count').textContent = '0';
@@ -386,39 +386,29 @@ async function refreshQr() {
   qrTimer = setTimeout(refreshQr, waitMs);
 }
 
-// ---------------------------------------------------------------- location map (all finished lectures, one tab)
+// ---------------------------------------------------------------- location map (select a lecture date, see dots)
 
-// IIT Jodhpur campus (Karwar). Pan/zoom is locked to this box so only campus
-// tiles are ever loaded. Nudge the numbers if the edges feel off.
 const CAMPUS_CENTER = [26.4716, 73.1134];
-const CAMPUS_BOUNDS = [[26.4596, 73.0994], [26.4836, 73.1274]]; // [[south, west], [north, east]]
-const LECTURE_COLORS = ['#7c3aed', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#ec4899', '#14b8a6', '#a3e635', '#f97316', '#8b5cf6'];
 
 let locMap = null;
-let locGroups = [];   // one L.layerGroup per lecture
-let locData = null;   // { sessions:[{id,date}], points:[[sessionIdx, lat, lng, roll, ip]], truncated }
+let locMarkers = [];
+let locData = null;
 let locCourseId = null;
 let locSeq = 0;
-
-function inCampus(lat, lng) {
-  return lat >= CAMPUS_BOUNDS[0][0] && lat <= CAMPUS_BOUNDS[1][0] &&
-         lng >= CAMPUS_BOUNDS[0][1] && lng <= CAMPUS_BOUNDS[1][1];
-}
 
 function initLocMap() {
   const el = document.getElementById('all-sessions-map');
   if (locMap || !el || !el.offsetParent) return;
   locMap = L.map('all-sessions-map', {
-    center: CAMPUS_CENTER, zoom: 16, minZoom: 15, maxZoom: 19,
-    maxBounds: CAMPUS_BOUNDS, maxBoundsViscosity: 1.0, preferCanvas: true
+    center: CAMPUS_CENTER, zoom: 16, minZoom: 14, maxZoom: 19,
+    scrollWheelZoom: true, dragging: true, touchZoom: true,
+    doubleClickZoom: true, boxZoom: true, preferCanvas: true
   });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, className: 'osm-dark', referrerPolicy: 'origin',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(locMap);
 }
-
-function lectureLabel(sess) { return `${formatDate(sess.date)} ${formatTime(sess.date)}`; }
 
 function setLocEmpty(msg) {
   document.getElementById('map-empty-msg').textContent = msg;
@@ -428,8 +418,6 @@ function setLocEmpty(msg) {
 
 async function loadLocationMap(force) {
   if (!selectedCourseId) { setLocEmpty('Select or create a course first.'); return; }
-
-  // already loaded for this course: just redraw (the map needs a visible container)
   if (!force && locData && locCourseId === selectedCourseId) { showLocationMap(); return; }
 
   const seq = ++locSeq;
@@ -441,13 +429,13 @@ async function loadLocationMap(force) {
     if (seq === locSeq) setLocEmpty(err.message);
     return;
   }
-  if (seq !== locSeq) return; // course changed while loading
+  if (seq !== locSeq) return;
   locData = data;
   locCourseId = selectedCourseId;
   showLocationMap(true);
 }
 
-function showLocationMap(rebuildLegend) {
+function showLocationMap(rebuild) {
   if (!locData.sessions.length) { setLocEmpty('No finished lectures yet. Locations appear here after a session ends.'); return; }
   if (typeof L === 'undefined') { setLocEmpty('The map library failed to load. Reload the page.'); return; }
 
@@ -456,85 +444,86 @@ function showLocationMap(rebuildLegend) {
   initLocMap();
   if (!locMap) return;
 
-  if (rebuildLegend !== false) buildLegend();
-  drawLocationMap();
-  renderIpTable();
-  setTimeout(() => locMap && locMap.invalidateSize(), 100);
+  if (rebuild) buildSessionSelect();
+  drawSelectedSession();
+  setTimeout(() => locMap && locMap.invalidateSize(), 150);
 }
 
-function buildLegend() {
-  const legend = document.getElementById('map-legend');
-  legend.innerHTML = locData.sessions.map((sess, i) => `
-    <label class="loc-chip">
-      <input type="checkbox" data-sess="${i}" checked>
-      <span class="loc-swatch" style="background:${LECTURE_COLORS[i % LECTURE_COLORS.length]};"></span>
-      ${escapeHtml(lectureLabel(sess))}
-    </label>`).join('');
-  legend.querySelectorAll('input[data-sess]').forEach(box => {
-    box.onchange = () => {
-      const g = locGroups[+box.dataset.sess];
-      if (!g || !locMap) return;
-      if (box.checked) g.addTo(locMap); else g.remove();
-    };
-  });
+function buildSessionSelect() {
+  const sel = document.getElementById('map-session-select');
+  const reversed = locData.sessions.slice().reverse();
+  sel.innerHTML = reversed.map((s, ri) => {
+    const i = locData.sessions.length - 1 - ri;
+    return `<option value="${i}">${formatDate(s.date)}</option>`;
+  }).join('');
+  sel.onchange = () => drawSelectedSession();
 }
 
-function drawLocationMap() {
-  locGroups.forEach(g => g.remove());
-  locGroups = locData.sessions.map(() => L.layerGroup());
+function getDistanceFromCampus(lat, lng) {
+  const R = 6371e3; // meters
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat - CAMPUS_CENTER[0]);
+  const dLon = toRad(lng - CAMPUS_CENTER[1]);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(CAMPUS_CENTER[0])) * Math.cos(toRad(lat)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-  let withGps = 0, outside = 0;
-  locData.points.forEach(([i, lat, lng, roll, ip]) => {
+function drawSelectedSession() {
+  locMarkers.forEach(m => m.remove());
+  locMarkers = [];
+
+  const sel = document.getElementById('map-session-select');
+  const sessionIdx = parseInt(sel.value, 10);
+  if (isNaN(sessionIdx)) return;
+
+  const sess = locData.sessions[sessionIdx];
+  let withGps = 0;
+  let offCampus = 0;
+
+  locData.points.forEach(([i, lat, lng, roll]) => {
+    if (i !== sessionIdx) return;
     if (typeof lat !== 'number' || typeof lng !== 'number') return;
     withGps++;
-    if (!inCampus(lat, lng)) { outside++; return; }
-    const color = LECTURE_COLORS[i % LECTURE_COLORS.length];
-    // plain hex: Leaflet writes these into SVG/canvas, where var(--x) doesn't resolve
-    L.circleMarker([lat, lng], { color, fillColor: color, fillOpacity: 0.55, radius: 5, weight: 1 })
-      .bindPopup(`${escapeHtml(roll)}<br>${escapeHtml(ip || 'no IP')}<br>${escapeHtml(lectureLabel(locData.sessions[i]))}`)
-      .addTo(locGroups[i]);
+
+    const dist = getDistanceFromCampus(lat, lng);
+    const isOut = dist > 3000; // > 3 km from campus center
+    if (isOut) offCampus++;
+
+    const color = isOut ? '#f59e0b' : '#6366f1';
+    const popupExtra = isOut
+      ? `<br><span style="color:#f59e0b; font-weight:600;">Outside campus (~${(dist / 1000).toFixed(1)} km)</span>`
+      : '';
+
+    const m = L.circleMarker([lat, lng], {
+      color, fillColor: color, fillOpacity: 0.7, radius: 6, weight: 1.5
+    }).bindPopup(`<strong>${escapeHtml(roll)}</strong><br>${formatDate(sess.date)}${popupExtra}`)
+      .addTo(locMap);
+    locMarkers.push(m);
   });
 
-  document.querySelectorAll('#map-legend input[data-sess]').forEach(box => {
-    if (box.checked) locGroups[+box.dataset.sess].addTo(locMap);
-  });
-
+  const totalScans = locData.points.filter(p => p[0] === sessionIdx).length;
+  const offNote = offCampus > 0 ? ` · ${offCampus} outside campus` : '';
   document.getElementById('map-summary').textContent =
-    `${locData.sessions.length} lectures · ${locData.points.length} scans · ${withGps} with GPS` +
-    (outside ? ` · ${outside} outside campus` : '') +
-    (locData.truncated ? ' · list truncated' : '');
-}
+    `${totalScans} scans · ${withGps} with GPS${offNote} · ${formatDate(sess.date)}`;
 
-function renderIpTable() {
-  const byIp = new Map();
-  locData.points.forEach(([, , , roll, ip]) => {
-    const key = ip || 'no IP';
-    if (!byIp.has(key)) byIp.set(key, { scans: 0, students: new Set() });
-    const e = byIp.get(key);
-    e.scans++; e.students.add(roll);
-  });
-  const rows = [...byIp.entries()].sort((a, b) => b[1].scans - a[1].scans).slice(0, 15);
-  document.getElementById('map-ip-body').innerHTML = rows.map(([ip, e]) =>
-    `<tr><td class="mono">${escapeHtml(ip)}</td><td class="num">${e.scans}</td><td class="num">${e.students.size}</td></tr>`
-  ).join('');
-}
-
-function setAllLectures(on) {
-  document.querySelectorAll('#map-legend input[data-sess]').forEach(box => {
-    if (box.checked !== on) { box.checked = on; box.onchange(); }
-  });
+  // Fit map to markers if there are any
+  if (locMarkers.length > 0) {
+    const group = L.featureGroup(locMarkers);
+    locMap.fitBounds(group.getBounds().pad(0.3));
+  }
 }
 
 function exportLocationCsv() {
   if (!locData) return;
   const cell = v => {
     let t = String(v ?? '');
-    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; // stop spreadsheet formula injection
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
     return '"' + t.replace(/"/g, '""') + '"';
   };
-  const lines = [['Lecture', 'Roll Number', 'Latitude', 'Longitude', 'IP'].map(cell).join(',')];
-  locData.points.forEach(([i, lat, lng, roll, ip]) =>
-    lines.push([lectureLabel(locData.sessions[i]), roll, lat, lng, ip].map(cell).join(',')));
+  const lines = [['Lecture Date', 'Roll Number', 'Latitude', 'Longitude'].map(cell).join(',')];
+  locData.points.forEach(([i, lat, lng, roll]) =>
+    lines.push([formatDate(locData.sessions[i].date), roll, lat, lng].map(cell).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
   a.download = 'scan-locations.csv';
@@ -544,8 +533,6 @@ function exportLocationCsv() {
 
 document.getElementById('btn-map-refresh').onclick = () => loadLocationMap(true);
 document.getElementById('btn-map-export').onclick = exportLocationCsv;
-document.getElementById('btn-map-all').onclick = () => setAllLectures(true);
-document.getElementById('btn-map-none').onclick = () => setAllLectures(false);
 
 // ---------------------------------------------------------------- live roster (count only, never locations)
 
