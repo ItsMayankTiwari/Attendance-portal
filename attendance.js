@@ -287,7 +287,7 @@ async function startAttendance(courseId, courseName) {
   show('screen-scan');
 
   scanPhase = 'scanning';
-  locPromise = getLocationAsync(); // warm up GPS while the student aims at the QR
+  locPromise = null;
   beginAttemptCountdown();
 
   html5QrCode = new Html5Qrcode('reader');
@@ -306,7 +306,8 @@ async function startAttendance(courseId, courseName) {
       document.getElementById('scan-hint').classList.add('hidden');
       document.getElementById('scan-verify-state').classList.remove('hidden');
 
-      const locNow = locPromise || getLocationAsync(); // normally already resolved by now
+      // Scanning is done: trigger GPS now so it resolves in background during fingerprint
+      const locPromise = getLocationAsync();
 
       try {
         const options = await authedFetch('/api/attendance-options', { method: 'POST', body: JSON.stringify({ qr_payload: decodedText }) });
@@ -314,11 +315,10 @@ async function startAttendance(courseId, courseName) {
         const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
         if (scanPhase !== 'verifying') return;
 
-        // Location has been resolving since the QR was decoded; give it at most
-        // 2 more seconds so a slow GPS fix can never hold up attendance.
+        // Fingerprint verification is done. Get coordinates (or fallback to null in max 1s so it never hangs)
         const { latitude, longitude } = await Promise.race([
-          locNow,
-          new Promise((r) => setTimeout(() => r({ latitude: null, longitude: null }), 2000))
+          locPromise,
+          new Promise((r) => setTimeout(() => r({ latitude: null, longitude: null }), 1000))
         ]);
 
         await authedFetch('/api/mark-attendance', {
