@@ -381,8 +381,9 @@ async function startAttendance(courseId, courseName) {
     toast('Scanner library failed to load. Reload the page.', 'error');
     return;
   }
+  const cleanCourseId = courseId && courseId !== 'undefined' && courseId !== 'null' ? String(courseId).trim() : null;
   safeStopScanner();
-  activeScanCourse = { id: courseId, name: courseName };
+  activeScanCourse = { id: cleanCourseId, name: courseName };
 
   document.getElementById('scan-course-title').textContent = courseName;
   document.getElementById('scan-verify-state').classList.add('hidden');
@@ -419,7 +420,7 @@ async function startAttendance(courseId, courseName) {
       try {
         const options = await authedFetch('/api/attendance-options', {
           method: 'POST',
-          body: JSON.stringify({ qr_payload: decodedText, expected_course_id: courseId })
+          body: JSON.stringify({ qr_payload: decodedText, expected_course_id: cleanCourseId })
         });
         if (scanPhase !== 'verifying') return;
         const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
@@ -436,7 +437,7 @@ async function startAttendance(courseId, courseName) {
             qr_payload: decodedText,
             latitude,
             longitude,
-            expected_course_id: courseId
+            expected_course_id: cleanCourseId
           })
         });
         scanPhase = 'done';

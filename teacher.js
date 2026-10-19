@@ -561,6 +561,12 @@ function renderCoursesManageList() {
 function renderLiveView() {
   document.getElementById('live-idle').classList.toggle('hidden', !!activeSessionId);
   document.getElementById('live-active').classList.toggle('hidden', !activeSessionId);
+  if (activeSessionId) {
+    const course = courses.find(c => String(c.id) === String(selectedCourseId));
+    if (course) {
+      document.getElementById('live-course-display').textContent = `${course.course_code} — ${course.course_name}`;
+    }
+  }
 }
 
 function stopLiveLocally() {
@@ -579,6 +585,10 @@ document.getElementById('btn-start-session').onclick = async () => {
     });
     activeSessionId = data.session_id;
     document.getElementById('qr-refresh-interval').textContent = data.rotation_seconds || 4;
+    const course = courses.find(c => String(c.id) === String(selectedCourseId));
+    if (course) {
+      document.getElementById('live-course-display').textContent = `${course.course_code} — ${course.course_name}`;
+    }
     if (data.resumed) toast('Resumed active session for this course.', 'success');
 
     document.getElementById('live-count').textContent = '0';
@@ -612,8 +622,8 @@ async function refreshQr() {
     box.innerHTML = '';
     liveQrCodeInstance = new QRCode(box, {
       text: data.payload,
-      width: 320,
-      height: 320,
+      width: 520,
+      height: 520,
       colorDark: '#000000',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.L
@@ -646,17 +656,19 @@ async function refreshLiveRoster() {
     document.getElementById('live-count').textContent = records.length;
 
     const feed = document.getElementById('live-checkin-feed');
-    if (records.length === 0) {
-      feed.innerHTML = `<div class="empty-state"><p>Waiting for first student check-in…</p></div>`;
-    } else {
-      feed.innerHTML = records.slice(0, 30).map(r => {
-        const roll = r.students?.roll_number || 'Verified';
-        return `
-          <div class="ledger-row" style="cursor:default; padding: 10px 18px;">
-            <span class="mono" style="font-weight: 600;">${escapeHtml(roll)}</span>
-            <span class="mono text-dim" style="font-size: 0.76rem;">${formatTime(r.marked_at)}</span>
-          </div>`;
-      }).join('');
+    if (feed) {
+      if (records.length === 0) {
+        feed.innerHTML = `<div class="empty-state"><p>Waiting for first student check-in…</p></div>`;
+      } else {
+        feed.innerHTML = records.slice(0, 30).map(r => {
+          const roll = r.students?.roll_number || 'Verified';
+          return `
+            <div class="ledger-row" style="cursor:default; padding: 10px 18px;">
+              <span class="mono" style="font-weight: 600;">${escapeHtml(roll)}</span>
+              <span class="mono text-dim" style="font-size: 0.76rem;">${formatTime(r.marked_at)}</span>
+            </div>`;
+        }).join('');
+      }
     }
 
     if (document.getElementById('tview-map').classList.contains('is-active')) {

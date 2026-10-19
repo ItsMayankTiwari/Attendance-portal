@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#090d14">
   <title>Attendance — Instructor Console</title>
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
@@ -206,41 +206,35 @@
 
         <!-- Active state -->
         <div id="live-active" class="hidden">
-          <div class="live-stage-grid" id="live-fullscreen-target">
-            <div class="qr-stage">
-              <div class="qr-frame">
+          <div class="qr-presentation-stage" id="live-fullscreen-target">
+            <div class="qr-presentation-header">
+              <div>
+                <span class="eyebrow-tag" style="margin-bottom: 4px;">Live Attendance Session</span>
+                <h2 id="live-course-display" class="mono" style="font-size: 1.35rem; margin: 0; font-weight: 700;">Active Course</h2>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="btn-fullscreen-qr">Fullscreen</button>
+            </div>
+
+            <div class="qr-presentation-body">
+              <div class="qr-frame qr-frame-max">
                 <div id="qr-box"></div>
               </div>
-              <div class="qr-progress-bar">
+              <div class="qr-progress-bar" style="width: min(520px, 92vw); margin-top: 16px;">
                 <div class="qr-progress-fill" id="qr-progress-fill"></div>
               </div>
-              <p class="text-dim mono" style="font-size: 0.76rem; letter-spacing: 0.04em; text-transform: uppercase;">
-                Rotates every <span id="qr-refresh-interval">4</span>s · Scan from Student Portal
+              <p class="text-dim mono" style="font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 12px;">
+                Rotates every <span id="qr-refresh-interval">4</span>s · Scan with Student Portal Camera
               </p>
             </div>
 
-            <!-- Live Check-in Panel -->
-            <div class="card card-flush" style="display: flex; flex-direction: column; justify-content: space-between;">
-              <div>
-                <div class="ledger-head">
-                  <h3>Live Check-ins</h3>
-                  <button class="btn btn-ghost btn-sm" id="btn-fullscreen-qr">Fullscreen</button>
-                </div>
-                <div style="padding: 18px; border-bottom: 1px solid var(--border);">
-                  <div class="counter-tile">
-                    <span class="num" id="live-count">0</span>
-                    <span class="text-dim" style="font-size: 0.85rem;">students verified</span>
-                  </div>
-                </div>
-                <div class="live-feed-list" id="live-checkin-feed">
-                  <div class="empty-state"><p>Waiting for first scan…</p></div>
-                </div>
+            <div class="qr-presentation-footer">
+              <div style="display: flex; align-items: baseline; gap: 10px;">
+                <span class="num" id="live-count" style="font-size: 2rem; font-weight: 800; color: var(--success-light); line-height: 1;">0</span>
+                <span class="text-dim" style="font-size: 0.95rem; font-weight: 500;">students marked attendance</span>
               </div>
-              <div style="padding: 16px 18px; border-top: 1px solid var(--border); background: var(--bg-surface);">
-                <button class="btn btn-danger" id="btn-end-session" style="width: 100%;">
-                  End Session
-                </button>
-              </div>
+              <button class="btn btn-danger" id="btn-end-session" style="padding: 10px 24px; font-size: 0.9rem;">
+                End Session
+              </button>
             </div>
           </div>
         </div>
@@ -332,7 +326,7 @@
     </div><!-- /teacher-main -->
   </div><!-- /teacher-shell -->
 
-  <script src="shared.js?v=8"></script>
-  <script src="teacher.js?v=8"></script>
+  <script src="shared.js?v=9"></script>
+  <script src="teacher.js?v=9"></script>
 </body>
 </html>
