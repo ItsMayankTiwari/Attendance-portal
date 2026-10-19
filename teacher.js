@@ -90,7 +90,10 @@ function switchView(name) {
   document.getElementById('page-title').textContent = titles[name];
   document.getElementById('course-select').style.visibility = name === 'courses' ? 'hidden' : 'visible';
   if (name === 'live') renderLiveView();
-  if (name === 'map') loadLocationMap();
+  if (name === 'map') {
+    loadLocationMap(true);
+    setTimeout(() => locMap && locMap.invalidateSize(), 150);
+  }
 }
 
 function showEmptyStates() {
@@ -455,12 +458,16 @@ function showLocationMap(rebuild) {
 function buildSessionSelect() {
   const sel = document.getElementById('map-session-select');
   if (!sel || !locData || !locData.sessions) return;
+  const prevVal = sel.value;
   const reversed = locData.sessions.slice().reverse();
   sel.innerHTML = reversed.map((s, ri) => {
     const i = locData.sessions.length - 1 - ri;
     const label = `${formatDate(s.date)}${s.is_live ? ' (Live)' : ''}`;
     return `<option value="${i}">${label}</option>`;
   }).join('');
+  if (prevVal !== '' && !isNaN(parseInt(prevVal, 10)) && parseInt(prevVal, 10) < locData.sessions.length) {
+    sel.value = prevVal;
+  }
   sel.onchange = () => drawSelectedSession();
 }
 
@@ -512,10 +519,12 @@ function drawSelectedSession() {
   document.getElementById('map-summary').textContent =
     `${totalScans} scans · ${withGps} with GPS${offNote} · ${formatDate(sess.date)}`;
 
-  // Fit map to markers if there are any
+  // Fit map to markers if there are any, else recenter on campus
   if (locMarkers.length > 0) {
     const group = L.featureGroup(locMarkers);
     locMap.fitBounds(group.getBounds().pad(0.3));
+  } else if (locMap) {
+    locMap.setView(CAMPUS_CENTER, 16);
   }
 }
 
@@ -546,6 +555,9 @@ async function refreshLiveRoster() {
   try {
     const records = await authedFetch(`/api/session-attendance?session_id=${activeSessionId}`);
     document.getElementById('live-count').textContent = records.length;
+    if (document.getElementById('tview-map').classList.contains('is-active')) {
+      loadLocationMap(true);
+    }
   } catch (err) { console.error('roster fetch failed:', err); }
 }
 

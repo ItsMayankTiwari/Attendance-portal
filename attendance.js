@@ -258,17 +258,23 @@ function onAttemptTimeout() {
   showScanFail('Time ran out. Tap the course again to retry.');
 }
 
-// Ask for GPS *in parallel* with the server round-trip + fingerprint prompt,
-// so it adds (almost) no extra waiting. Never rejects: resolves to nulls on
-// denial / timeout / unsupported, and attendance is marked either way.
+// Ask for GPS after the QR scan succeeds, during the fingerprint prompt.
+// Now REQUIRED: if the student denies or times out, attendance is blocked.
 function getLocationAsync() {
-  const none = { latitude: null, longitude: null };
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve(none);
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      return reject(new Error('Location is not supported on this browser. Use a phone with GPS.'));
+    }
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
-      (e) => { console.warn('geolocation unavailable:', e && e.code, e && e.message); resolve(none); },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 }
+      (e) => {
+        if (e && e.code === 1) {
+          reject(new Error('Location permission denied. Enable location in your browser settings and try again.'));
+        } else {
+          reject(new Error('Could not get your location. Make sure GPS/Location is turned on and try again.'));
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   });
 }
@@ -306,24 +312,25 @@ async function startAttendance(courseId, courseName) {
       document.getElementById('scan-hint').classList.add('hidden');
       document.getElementById('scan-verify-state').classList.remove('hidden');
 
-      // Scanning is done: trigger GPS now so it resolves in background during fingerprint
-      const locPromise = getLocationAsync();
+      // Trigger GPS now (after scan, during fingerprint). GPS is required.
+      const gpsPromise = getLocationAsync();
 
       try {
-        const options = await authedFetch('/api/attendance-options', { method: 'POST', body: JSON.stringify({ qr_payload: decodedText }) });
+        // Send the expected course_id so server can verify the QR belongs to this course
+        const options = await authedFetch('/api/attendance-options', {
+          method: 'POST',
+          body: JSON.stringify({ qr_payload: decodedText, expected_course_id: courseId })
+        });
         if (scanPhase !== 'verifying') return;
         const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
         if (scanPhase !== 'verifying') return;
 
-        // Fingerprint verification is done. Get coordinates (or fallback to null in max 1s so it never hangs)
-        const { latitude, longitude } = await Promise.race([
-          locPromise,
-          new Promise((r) => setTimeout(() => r({ latitude: null, longitude: null }), 1000))
-        ]);
+        // GPS is required — wait for it (will throw if denied/unavailable)
+        const { latitude, longitude } = await gpsPromise;
 
         await authedFetch('/api/mark-attendance', {
           method: 'POST',
-          body: JSON.stringify({ response: assertion, qr_payload: decodedText, latitude, longitude })
+          body: JSON.stringify({ response: assertion, qr_payload: decodedText, latitude, longitude, expected_course_id: courseId })
         });
         scanPhase = 'done';
         clearScanCountdown();
