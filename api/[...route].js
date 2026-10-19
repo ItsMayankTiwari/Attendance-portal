@@ -18,6 +18,7 @@ import addAttendanceManual from '../lib/add-attendance-manual.js';
 import removeEnrollment from '../lib/remove-enrollment.js';
 import fixRollNumber from '../lib/fix-roll-number.js';
 import courseLocations from '../lib/course-locations.js';
+import teacherResetDevice from '../lib/teacher-reset-device.js';
 
 const routes = {
   'teacher-courses': teacherCourses,
@@ -39,7 +40,8 @@ const routes = {
   'add-attendance-manual': addAttendanceManual,
   'remove-enrollment': removeEnrollment,
   'fix-roll-number': fixRollNumber,
-  'course-locations': courseLocations
+  'course-locations': courseLocations,
+  'teacher-reset-device': teacherResetDevice
 };
 
 export default async function handler(req, res) {

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#090d14">
   <title>Attendance — Instructor Console</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
@@ -28,7 +28,7 @@
       <div>
         <span class="eyebrow-tag">IIT Jodhpur · Faculty & TA</span>
         <h1 class="eyebrow-free-title">Instructor Console</h1>
-        <p class="subtitle">Sign in with your authorised `@iitj.ac.in` account to project classroom QR sessions and audit course rosters.</p>
+        <p class="subtitle">Sign in with your authorised `@iitj.ac.in` account to project classroom QR sessions and manage courses.</p>
       </div>
       <button class="btn btn-primary" id="btn-google-login" style="width: 100%;">
         Continue with Institute Google
@@ -113,11 +113,11 @@
             <div id="at-risk-panel" class="card card-flush"></div>
           </div>
 
-          <!-- Full roster with search & filter -->
+          <!-- Full student list with search & filter -->
           <div class="card card-flush">
             <div class="ledger-head" style="flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <h3>Enrolled Roster</h3>
+                <h3>Enrolled Students</h3>
                 <span class="meta" id="roster-count-badge">0 students</span>
               </div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -137,7 +137,8 @@
                     <th>Student Name</th>
                     <th class="num">Attended</th>
                     <th class="num">Rate</th>
-                    <th class="num">Action</th>
+                    <th class="num">Device</th>
+                    <th class="num" style="text-align: right;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="roster-table-body"></tbody>
@@ -213,7 +214,7 @@
               </p>
             </div>
 
-            <!-- Live Check-in Roster Panel -->
+            <!-- Live Check-in Panel -->
             <div class="card card-flush" style="display: flex; flex-direction: column; justify-content: space-between;">
               <div>
                 <div class="ledger-head">
@@ -232,7 +233,7 @@
               </div>
               <div style="padding: 16px 18px; border-top: 1px solid var(--border); background: var(--bg-surface);">
                 <button class="btn btn-danger" id="btn-end-session" style="width: 100%;">
-                  End Session & Finalize Log
+                  End Session
                 </button>
               </div>
             </div>
@@ -311,7 +312,7 @@
     </div><!-- /teacher-main -->
   </div><!-- /teacher-shell -->
 
-  <script src="shared.js?v=6"></script>
-  <script src="teacher.js?v=6"></script>
+  <script src="shared.js?v=7"></script>
+  <script src="teacher.js?v=7"></script>
 </body>
 </html>

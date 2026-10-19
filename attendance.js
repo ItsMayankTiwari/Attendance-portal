@@ -110,40 +110,17 @@ document.getElementById('btn-register-device').onclick = async () => {
   const status = document.getElementById('setup-status');
   status.textContent = 'Waiting for device passkey…';
   try {
-    let options;
-    try {
-      options = await authedFetch('/api/register-options', { method: 'POST' });
-    } catch (err) {
-      if (!err.needs_reset_verification) throw err;
-      status.textContent = 'A device is already registered — verify it first to replace it…';
-      const stepUpOptions = await authedFetch('/api/edit-auth-options', { method: 'POST' });
-      const stepUpAssertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: stepUpOptions });
-      const { edit_token } = await authedFetch('/api/edit-auth-verify', {
-        method: 'POST',
-        body: JSON.stringify({ response: stepUpAssertion, purpose: 'reset_device' })
-      });
-      status.textContent = 'Verified — now bind the new passkey…';
-      options = await authedFetch('/api/register-options', {
-        method: 'POST',
-        body: JSON.stringify({ reset_token: edit_token })
-      });
-    }
+    const options = await authedFetch('/api/register-options', { method: 'POST' });
     const assertion = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
     await authedFetch('/api/register-verify', {
       method: 'POST',
       body: JSON.stringify({ response: assertion })
     });
-    toast('Biometric passkey registered.', 'success');
+    toast('Biometric passkey registered successfully.', 'success');
     await bootDashboard();
   } catch (err) {
     status.textContent = err.message || 'Could not register this device.';
   }
-};
-
-document.getElementById('btn-rebind-device').onclick = () => {
-  document.getElementById('shell').classList.add('hidden');
-  document.getElementById('setup-status').textContent = 'Verify your current passkey to bind a replacement device.';
-  show('screen-setup');
 };
 
 // ---------------------------------------------------------------- records + home
