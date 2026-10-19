@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#0b0f17">
+  <meta name="theme-color" content="#090d14">
   <title>Attendance — Instructor Console</title>
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
   <style>
-    .osm-dark { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }
+    .osm-dark { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92); }
   </style>
 </head>
 <body>
@@ -23,15 +23,18 @@
   </div>
 
   <!-- ============ SIGN IN ============ -->
-  <div class="screen" id="screen-auth" style="max-width: none;">
-    <div>
-      <h1 class="eyebrow-free-title">Instructor Console</h1>
-      <p class="subtitle">Sign in with your authorised institute account.</p>
+  <div class="screen" id="screen-auth">
+    <div class="auth-card">
+      <div>
+        <span class="eyebrow-tag">IIT Jodhpur · Faculty & TA</span>
+        <h1 class="eyebrow-free-title">Instructor Console</h1>
+        <p class="subtitle">Sign in with your authorised `@iitj.ac.in` account to project classroom QR sessions and audit course rosters.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-google-login" style="width: 100%;">
+        Continue with Institute Google
+      </button>
+      <p class="text-dim" id="auth-status" style="font-size: 0.82rem;"></p>
     </div>
-    <button class="btn btn-primary" id="btn-google-login" style="width: auto; padding-inline: 28px;">
-      Sign in with Google
-    </button>
-    <p class="text-dim" id="auth-status" style="font-size: 0.82rem;"></p>
   </div>
 
   <!-- ============ CONSOLE SHELL ============ -->
@@ -40,78 +43,101 @@
     <!-- Nav rail -->
     <div class="navrail">
       <div class="brand" style="padding: 8px 12px 20px;">
-        <span class="brand-mark">A</span> Attendance
+        <span class="brand-mark">IITJ</span> Instructor Console
       </div>
-      <button class="navrail-item is-active" data-view="overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> Class Overview</button>
-      <button class="navrail-item" data-view="grid"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Attendance Sheet</button>
-      <button class="navrail-item" data-view="live"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg> Live Session</button>
-      <button class="navrail-item" data-view="map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Location Map</button>
-      <button class="navrail-item" data-view="courses"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Manage Courses</button>
+      <button class="navrail-item is-active" data-view="overview">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        Class Overview
+      </button>
+      <button class="navrail-item" data-view="grid">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        Attendance Sheet
+      </button>
+      <button class="navrail-item" data-view="live">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+        Live Session
+      </button>
+      <button class="navrail-item" data-view="map">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        Location Map
+      </button>
+      <button class="navrail-item" data-view="courses">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Manage Courses
+      </button>
       <div style="flex: 1;"></div>
-      <div style="padding: 10px 14px; font-size: clamp(0.7rem, 1.2vw, 0.78rem); color: var(--text-dim);" id="user-badge"></div>
-      <button class="navrail-item" id="btn-logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Sign out</button>
+      <div class="mono" style="padding: 10px 12px; font-size: 0.74rem; color: var(--text-dim); word-break: break-all;" id="user-badge"></div>
+      <button class="navrail-item" id="btn-logout">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        Sign out
+      </button>
     </div>
 
     <!-- Main content -->
     <div class="teacher-main">
 
       <!-- Page header (course selector + title) -->
-      <div class="spread" style="margin-bottom: 28px; flex-wrap: wrap; gap: 14px;">
-        <h1 class="eyebrow-free-title" id="page-title" style="font-size: clamp(1.3rem, 3vw, 1.8rem);">Class Overview</h1>
-        <select class="input" id="course-select" style="width: auto; min-width: 220px;"></select>
+      <div class="spread" style="margin-bottom: 24px; flex-wrap: wrap;">
+        <h1 class="eyebrow-free-title" id="page-title" style="font-size: 1.5rem;">Class Overview</h1>
+        <select class="input mono" id="course-select" style="width: auto; min-width: 240px;"></select>
       </div>
 
       <!-- ---- OVERVIEW ---- -->
       <div class="teacher-view is-active" id="tview-overview">
         <div id="overview-empty" class="card hidden" style="text-align: center; padding: 48px 20px;">
           <div class="empty-state">
-            <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
-            <p>Select or create a course to see its attendance.</p>
+            <p>Select or create a course in <strong>Manage Courses</strong> to view its attendance ledger.</p>
           </div>
         </div>
 
         <div id="overview-content" class="hidden">
-          <!-- Stats row with independent column heights -->
           <div class="overview-grid">
             <div class="card snapshot-card">
               <div class="spread" style="margin-bottom: 16px;">
-                <h3 class="card-header" style="margin: 0;">Snapshot</h3>
-                <span class="text-dim mono" id="overview-session-count"
-                  style="font-size: clamp(0.7rem, 1.2vw, 0.78rem);">0 lectures</span>
+                <h3 class="card-header" style="margin: 0;">Course Snapshot</h3>
+                <span class="text-dim mono" id="overview-session-count" style="font-size: 0.78rem;">0 lectures</span>
               </div>
-              <div class="donut-row" style="flex-wrap: wrap; gap: 20px;">
+              <div class="donut-row" style="flex-wrap: wrap; gap: 22px;">
                 <div id="overview-donut"></div>
-                <div class="stack" style="gap: 4px;">
-                  <div style="font-size: clamp(1.3rem, 2.5vw, 1.6rem); font-weight: 600; color: var(--success-light);"
-                    class="mono" id="overview-avg">—</div>
-                  <div class="text-dim" style="font-size: clamp(0.7rem, 1.2vw, 0.78rem); text-transform: uppercase; letter-spacing: 0.05em;">avg attendance</div>
+                <div class="stack" style="gap: 2px;">
+                  <div style="font-size: 1.5rem; font-weight: 600; color: var(--success-light);" class="mono" id="overview-avg">—</div>
+                  <div class="text-dim" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Avg Attendance</div>
                 </div>
-                <div class="stack" style="gap: 4px;">
-                  <div style="font-size: clamp(1.3rem, 2.5vw, 1.6rem); font-weight: 600; color: var(--danger);"
-                    class="mono" id="overview-at-risk-count">—</div>
-                  <div class="text-dim" style="font-size: clamp(0.7rem, 1.2vw, 0.78rem); text-transform: uppercase; letter-spacing: 0.05em;">below 75%</div>
+                <div class="stack" style="gap: 2px;">
+                  <div style="font-size: 1.5rem; font-weight: 600; color: var(--warn);" class="mono" id="overview-at-risk-count">—</div>
+                  <div class="text-dim" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Below 75%</div>
                 </div>
               </div>
             </div>
 
-            <!-- At-risk panel — JS fills this -->
             <div id="at-risk-panel" class="card card-flush"></div>
           </div>
 
-          <!-- Full roster -->
+          <!-- Full roster with search & filter -->
           <div class="card card-flush">
-            <div class="ledger-head">
-              <h3>All students</h3>
-              <button class="link-btn" id="btn-export-csv">Export CSV</button>
+            <div class="ledger-head" style="flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3>Enrolled Roster</h3>
+                <span class="meta" id="roster-count-badge">0 students</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <input class="input" id="roster-search" placeholder="Search roll no. or name…" style="width: 210px; padding: 6px 10px; font-size: 0.82rem;">
+                <div class="segmented" id="roster-filter-group">
+                  <button class="segmented-btn is-active" data-rfilter="all">All</button>
+                  <button class="segmented-btn" data-rfilter="risk">&lt; 75%</button>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="btn-export-csv">Export CSV</button>
+              </div>
             </div>
-            <div style="overflow-x: auto;">
+            <div class="grid-scroll">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Student</th>
-                    <th class="num">Classes</th>
-                    <th class="num">%</th>
-                    <th class="num"></th>
+                    <th>Roll No.</th>
+                    <th>Student Name</th>
+                    <th class="num">Attended</th>
+                    <th class="num">Rate</th>
+                    <th class="num">Action</th>
                   </tr>
                 </thead>
                 <tbody id="roster-table-body"></tbody>
@@ -125,26 +151,31 @@
       <div class="teacher-view" id="tview-grid">
         <div id="grid-empty" class="card hidden" style="text-align: center; padding: 48px 20px;">
           <div class="empty-state">
-            <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-            <p>No lectures recorded for this course yet.</p>
+            <p>No lectures recorded for this course yet. Start a session in <strong>Live Session</strong> first.</p>
           </div>
         </div>
 
         <div class="card card-flush hidden" id="grid-content">
-          <div class="ledger-head" style="flex-wrap: wrap; gap: 10px;">
-            <h3>Edit attendance by roll number</h3>
-            <span class="meta">Works for ended sessions too</span>
+          <div class="ledger-head" style="flex-wrap: wrap;">
+            <div>
+              <h3>Lecture Matrix & Manual Override</h3>
+              <p class="text-dim" style="font-size: 0.78rem; margin-top: 2px;">Click any <span class="mono">✓</span> or <span class="mono">·</span> cell in the table below to toggle attendance directly, or use the quick entry bar.</p>
+            </div>
+            <input class="input" id="grid-search-input" placeholder="Filter matrix by roll no…" style="width: 200px; padding: 6px 10px; font-size: 0.82rem;">
           </div>
-          <div style="padding: 16px 18px; border-bottom: 1px solid var(--border);">
+          <div style="padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--bg-surface);">
             <div class="manual-entry-row">
               <div class="field">
-                <select class="input" id="grid-session-select"></select>
+                <label for="grid-session-select">Session Date</label>
+                <select class="input mono" id="grid-session-select"></select>
               </div>
               <div class="field">
-                <input class="input" id="grid-manual-roll" placeholder="Roll number">
+                <label for="grid-manual-roll">Roll Number</label>
+                <input class="input mono" id="grid-manual-roll" list="enrolled-rolls-datalist" placeholder="e.g. B24CS1001" style="text-transform: uppercase;">
+                <datalist id="enrolled-rolls-datalist"></datalist>
               </div>
-              <button class="btn btn-primary" id="btn-grid-mark" style="width: auto; padding-inline: 16px;">Mark present</button>
-              <button class="btn btn-ghost" id="btn-grid-unmark" style="width: auto; padding-inline: 16px;">Remove</button>
+              <button class="btn btn-primary" id="btn-grid-mark" style="width: auto;">Mark present</button>
+              <button class="btn btn-ghost" id="btn-grid-unmark" style="width: auto;">Mark absent</button>
             </div>
           </div>
           <div class="grid-scroll">
@@ -156,36 +187,55 @@
       <!-- ---- LIVE SESSION ---- -->
       <div class="teacher-view" id="tview-live">
         <!-- Idle state -->
-        <div id="live-idle" class="card" style="text-align: center; padding: 64px 24px;">
-          <h2 style="margin-bottom: 12px; font-size: clamp(1.2rem, 2.5vw, 1.5rem);">Start Live Session</h2>
-          <p class="text-dim" style="margin-bottom: 28px; font-size: clamp(0.85rem, 1.5vw, 0.95rem); max-width: 440px; margin-inline: auto;">
-            Project a rotating QR code on the classroom screen. Students scan in real time from their registered devices.
+        <div id="live-idle" class="card" style="text-align: center; padding: 56px 24px;">
+          <span class="eyebrow-tag">Classroom Projection</span>
+          <h2 style="margin-bottom: 10px; font-size: 1.4rem;">Start Live Attendance Session</h2>
+          <p class="text-dim" style="margin-bottom: 24px; font-size: 0.9rem; max-width: 440px; margin-inline: auto;">
+            Projects a dynamic, HMAC-signed QR code that rotates every 4 seconds. Students scan and verify via passkey + GPS.
           </p>
-          <button class="btn btn-primary" id="btn-start-session" style="width: auto; padding-inline: 32px; font-size: 1rem;">
-            Start live session
+          <button class="btn btn-primary" id="btn-start-session" style="padding: 11px 28px; font-size: 0.95rem;">
+            Launch Live QR Session
           </button>
         </div>
 
         <!-- Active state -->
         <div id="live-active" class="hidden">
-          <div class="qr-stage">
-            <div class="qr-frame">
-              <div id="qr-box"></div>
+          <div class="live-stage-grid" id="live-fullscreen-target">
+            <div class="qr-stage">
+              <div class="qr-frame">
+                <div id="qr-box"></div>
+              </div>
+              <div class="qr-progress-bar">
+                <div class="qr-progress-fill" id="qr-progress-fill"></div>
+              </div>
+              <p class="text-dim mono" style="font-size: 0.76rem; letter-spacing: 0.04em; text-transform: uppercase;">
+                Rotates every <span id="qr-refresh-interval">4</span>s · Scan from Student Portal
+              </p>
             </div>
-            <p class="text-dim" style="font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase;">
-              Rotating every <span id="qr-refresh-interval">4</span> seconds — Project on classroom screen
-            </p>
-          </div>
 
-          <div class="spread" style="margin-top: 16px; padding: 18px 24px; background: var(--bg-card);
-               border: 1px solid var(--border); border-radius: var(--radius);">
-            <div class="counter-tile">
-              <span class="num" id="live-count">0</span>
-              <span class="text-dim" style="font-size: 0.88rem;">students marked present</span>
+            <!-- Live Check-in Roster Panel -->
+            <div class="card card-flush" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div class="ledger-head">
+                  <h3>Live Check-ins</h3>
+                  <button class="btn btn-ghost btn-sm" id="btn-fullscreen-qr">Fullscreen</button>
+                </div>
+                <div style="padding: 18px; border-bottom: 1px solid var(--border);">
+                  <div class="counter-tile">
+                    <span class="num" id="live-count">0</span>
+                    <span class="text-dim" style="font-size: 0.85rem;">students verified</span>
+                  </div>
+                </div>
+                <div class="live-feed-list" id="live-checkin-feed">
+                  <div class="empty-state"><p>Waiting for first scan…</p></div>
+                </div>
+              </div>
+              <div style="padding: 16px 18px; border-top: 1px solid var(--border); background: var(--bg-surface);">
+                <button class="btn btn-danger" id="btn-end-session" style="width: 100%;">
+                  End Session & Finalize Log
+                </button>
+              </div>
             </div>
-            <button class="btn btn-danger" id="btn-end-session" style="width: auto; padding-inline: 20px;">
-              End session
-            </button>
           </div>
         </div>
       </div>
@@ -198,13 +248,15 @@
 
         <div id="map-content" class="hidden">
           <div class="card card-flush" style="margin-bottom: 20px;">
-            <div class="ledger-head" style="flex-wrap: wrap; gap: 10px;">
-              <h3>Scan locations</h3>
-              <span class="meta" id="map-summary"></span>
-              <span style="display: flex; gap: 14px; align-items: center;">
-                <select class="input" id="map-session-select" style="width: auto; min-width: 180px;"></select>
-                <button class="link-btn" id="btn-map-refresh">Refresh</button>
-                <button class="link-btn" id="btn-map-export">Export CSV</button>
+            <div class="ledger-head" style="flex-wrap: wrap;">
+              <div>
+                <h3>GPS Verification Map</h3>
+                <span class="meta" id="map-summary"></span>
+              </div>
+              <span style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select class="input mono" id="map-session-select" style="width: auto; min-width: 180px; padding: 6px 28px 6px 10px; font-size: 0.82rem;"></select>
+                <button class="btn btn-ghost btn-sm" id="btn-map-refresh">Refresh</button>
+                <button class="btn btn-ghost btn-sm" id="btn-map-export">Export CSV</button>
               </span>
             </div>
             <div id="all-sessions-map" style="width: 100%; height: 520px; z-index: 1;"></div>
@@ -215,23 +267,42 @@
       <!-- ---- COURSES ---- -->
       <div class="teacher-view" id="tview-courses">
         <div class="manage-courses-grid">
-          <!-- Create form -->
-          <div class="card stack" style="align-self: start;">
-            <h3 class="card-header">Create a course</h3>
-            <div class="field">
-              <label for="input-new-code">Course code</label>
-              <input class="input" id="input-new-code" placeholder="e.g. CS201">
+          <div class="stack">
+            <!-- Create form -->
+            <div class="card stack">
+              <h3 class="card-header" style="margin-bottom: 2px;">Create a Course</h3>
+              <div class="field">
+                <label for="input-new-code">Course Code</label>
+                <input class="input mono" id="input-new-code" placeholder="e.g. CS201" style="text-transform: uppercase;">
+              </div>
+              <div class="field">
+                <label for="input-new-name">Course Title</label>
+                <input class="input" id="input-new-name" placeholder="e.g. Data Structures & Algorithms">
+              </div>
+              <button class="btn btn-primary" id="btn-create-course" style="width: 100%;">Create Course</button>
             </div>
-            <div class="field">
-              <label for="input-new-name">Course name</label>
-              <input class="input" id="input-new-name" placeholder="e.g. Data Structures">
+
+            <!-- Roll Number Correction Card (wires /api/fix-roll-number) -->
+            <div class="card stack">
+              <h3 class="card-header" style="margin-bottom: 2px;">Correct Student Roll Number</h3>
+              <p class="text-dim" style="font-size: 0.8rem; margin-bottom: 4px;">
+                Authorised instructors can update a student's roll number linked to their `@iitj.ac.in` email.
+              </p>
+              <div class="field">
+                <label for="input-fix-email">Student Institute Email</label>
+                <input class="input mono" id="input-fix-email" placeholder="student@iitj.ac.in">
+              </div>
+              <div class="field">
+                <label for="input-fix-roll">Corrected Roll Number</label>
+                <input class="input mono" id="input-fix-roll" placeholder="B24CS1001" style="text-transform: uppercase;">
+              </div>
+              <button class="btn btn-ghost" id="btn-fix-roll" style="width: 100%;">Update Roll Number</button>
             </div>
-            <button class="btn btn-primary" id="btn-create-course" style="width: fit-content;">Create course</button>
           </div>
 
           <!-- Existing courses list -->
           <div class="card card-flush">
-            <div class="ledger-head"><h3>Your courses</h3></div>
+            <div class="ledger-head"><h3>Your Courses & Teaching Assistants</h3></div>
             <div class="ledger-body--flush" id="courses-manage-list"></div>
           </div>
         </div>
@@ -240,7 +311,7 @@
     </div><!-- /teacher-main -->
   </div><!-- /teacher-shell -->
 
-  <script src="shared.js?v=5"></script>
-  <script src="teacher.js?v=5"></script>
+  <script src="shared.js?v=6"></script>
+  <script src="teacher.js?v=6"></script>
 </body>
 </html>
