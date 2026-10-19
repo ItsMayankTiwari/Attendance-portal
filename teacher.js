@@ -194,9 +194,9 @@ function renderRosterTable() {
       <td>${escapeHtml(s.name)}</td>
       <td class="num">${s.attended_classes}/${s.total_classes}</td>
       <td class="num"><span class="badge ${total_sessions > 0 && isBelowThreshold(s) ? 'badge-warn' : 'badge-verified'}">${s.percentage}%</span></td>
-      <td class="num">${s.has_device ? '<span class="badge badge-verified">Bound</span>' : '<span class="badge" style="background:var(--bg-raised); color:var(--text-dim);">None</span>'}</td>
+      <td class="num">${s.has_device ? '<span class="badge badge-verified">Bound</span>' : '<span class="badge" style="background:var(--bg-raised); color:var(--text-dim);">No Device</span>'}</td>
       <td class="num" style="text-align: right; white-space: nowrap;">
-        ${s.has_device ? `<button class="link-btn" data-reset-device="${escapeHtml(s.roll_number)}" style="color:var(--warn); margin-right:12px;">Reset Device</button>` : ''}
+        <button class="link-btn" data-reset-device="${escapeHtml(s.roll_number)}" style="color:var(--warn); margin-right:12px;">Reset Device</button>
         <button class="link-btn" data-remove-student="${escapeHtml(s.roll_number)}" style="color:var(--absent-strong);">Unenroll</button>
       </td>
     </tr>`).join('') || `<tr><td colspan="6" class="text-dim" style="text-align:center; padding:24px;">No matching students found.</td></tr>`;
@@ -426,6 +426,35 @@ document.getElementById('btn-fix-roll').onclick = async () => {
     toast(err.message, 'error');
   }
 };
+
+const resetDeviceBtn = document.getElementById('btn-reset-device-form');
+if (resetDeviceBtn) {
+  resetDeviceBtn.onclick = async () => {
+    const roll_number = document.getElementById('input-reset-roll').value.trim().toUpperCase();
+    if (!roll_number) {
+      toast('Enter the student roll number.', 'error');
+      return;
+    }
+    const ok = await confirmSheet({
+      title: `Reset device for ${roll_number}?`,
+      body: `This will unbind the registered device passkey from ${roll_number}. The student will be prompted to register their new device upon their next login.`,
+      confirmLabel: 'Reset Device',
+      danger: true
+    });
+    if (!ok) return;
+    try {
+      await authedFetch('/api/teacher-reset-device', {
+        method: 'POST',
+        body: JSON.stringify({ roll_number, course_id: selectedCourseId || undefined })
+      });
+      document.getElementById('input-reset-roll').value = '';
+      toast(`Device unbound for ${roll_number}.`, 'success');
+      if (selectedCourseId) await loadCourseData();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
+}
 
 function renderCoursesManageList() {
   const el = document.getElementById('courses-manage-list');
