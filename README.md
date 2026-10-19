@@ -169,8 +169,10 @@ The Instructor Console features a built-in OpenStreetMap / Leaflet geolocation r
 - **Teaching Assistant (TA) Delegation**:
   - Instructors can add and authorize TAs via `@iitj.ac.in` institute emails.
   - TAs inherit permissions to launch live QR sessions, review records, and unbind student devices.
-- **Student Roll Number Correction**:
-  - Direct administrative tool to fix or update roll numbers linked to student Google accounts.
+- **Dedicated Manage Students Suite**:
+  - Side-by-side administrative cards:
+    1. **Correct Student Roll Number**: Direct tool to update roll numbers linked to student Google accounts.
+    2. **Reset Student Device**: Direct roll-number lookup to unbind registered device passkeys when students replace, lose, or format their phones.
 
 ---
 

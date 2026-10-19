@@ -97,15 +97,16 @@ const titles = {
   grid: 'Attendance Sheet',
   live: 'Live Session',
   map: 'Location Map',
-  courses: 'Manage Courses'
+  courses: 'Manage Courses',
+  students: 'Manage Students'
 };
 
 function switchView(name) {
   document.querySelectorAll('.navrail-item[data-view]').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
   document.querySelectorAll('.teacher-view').forEach(v => v.classList.remove('is-active'));
   document.getElementById('tview-' + name).classList.add('is-active');
-  document.getElementById('page-title').textContent = titles[name];
-  document.getElementById('course-select').style.visibility = name === 'courses' ? 'hidden' : 'visible';
+  document.getElementById('page-title').textContent = titles[name] || 'Instructor Console';
+  document.getElementById('course-select').style.visibility = (name === 'courses' || name === 'students') ? 'hidden' : 'visible';
   if (name === 'live') renderLiveView();
   if (name === 'map') {
     loadLocationMap(true);

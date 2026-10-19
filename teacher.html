@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#090d14">
   <title>Attendance — Instructor Console</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
@@ -64,6 +64,10 @@
       <button class="navrail-item" data-view="courses">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         Manage Courses
+      </button>
+      <button class="navrail-item" data-view="students">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        Manage Students
       </button>
       <div style="flex: 1;"></div>
       <div class="mono" style="padding: 10px 12px; font-size: 0.74rem; color: var(--text-dim); word-break: break-all;" id="user-badge"></div>
@@ -281,38 +285,6 @@
               </div>
               <button class="btn btn-primary" id="btn-create-course" style="width: 100%;">Create Course</button>
             </div>
-
-            <!-- Roll Number Correction Card (wires /api/fix-roll-number) -->
-            <div class="card stack">
-              <h3 class="card-header" style="margin-bottom: 2px;">Correct Student Roll Number</h3>
-              <p class="text-dim" style="font-size: 0.8rem; margin-bottom: 4px;">
-                Authorised instructors can update a student's roll number linked to their `@iitj.ac.in` email.
-              </p>
-              <div class="field">
-                <label for="input-fix-email">Student Institute Email</label>
-                <input class="input mono" id="input-fix-email" placeholder="student@iitj.ac.in">
-              </div>
-              <div class="field">
-                <label for="input-fix-roll">Corrected Roll Number</label>
-                <input class="input mono" id="input-fix-roll" placeholder="B24CS1001" style="text-transform: uppercase;">
-              </div>
-              <button class="btn btn-ghost" id="btn-fix-roll" style="width: 100%;">Update Roll Number</button>
-            </div>
-
-            <!-- Reset Student Device Card (wires /api/teacher-reset-device) -->
-            <div class="card stack">
-              <h3 class="card-header" style="margin-bottom: 2px;">Reset Student Device</h3>
-              <p class="text-dim" style="font-size: 0.8rem; margin-bottom: 4px; line-height: 1.4;">
-                Student attendance is locked to their registered device. If a student loses or replaces their phone, enter their roll number to unbind it. They will be prompted to register their new device upon their next login.
-              </p>
-              <div class="field">
-                <label for="input-reset-roll">Student Roll Number</label>
-                <input class="input mono" id="input-reset-roll" placeholder="e.g. B24CS1001" style="text-transform: uppercase;">
-              </div>
-              <button class="btn btn-ghost" id="btn-reset-device-form" style="width: 100%; color: var(--warn); border-color: rgba(234, 179, 8, 0.3);">
-                Reset & Unbind Device
-              </button>
-            </div>
           </div>
 
           <!-- Existing courses list -->
@@ -323,10 +295,47 @@
         </div>
       </div>
 
+      <!-- ---- MANAGE STUDENTS ---- -->
+      <div class="teacher-view" id="tview-students">
+        <div class="manage-students-grid">
+          <!-- Roll Number Correction Card -->
+          <div class="card stack">
+            <h3 class="card-header" style="margin-bottom: 2px;">Correct Student Roll Number</h3>
+            <p class="text-dim" style="font-size: 0.8rem; margin-bottom: 4px; line-height: 1.45;">
+              Authorised instructors can update a student's roll number linked to their `@iitj.ac.in` institute account.
+            </p>
+            <div class="field">
+              <label for="input-fix-email">Student Institute Email</label>
+              <input class="input mono" id="input-fix-email" placeholder="student@iitj.ac.in">
+            </div>
+            <div class="field">
+              <label for="input-fix-roll">Corrected Roll Number</label>
+              <input class="input mono" id="input-fix-roll" placeholder="B24CS1001" style="text-transform: uppercase;">
+            </div>
+            <button class="btn btn-ghost" id="btn-fix-roll" style="width: 100%;">Update Roll Number</button>
+          </div>
+
+          <!-- Reset Student Device Card -->
+          <div class="card stack">
+            <h3 class="card-header" style="margin-bottom: 2px;">Reset Student Device</h3>
+            <p class="text-dim" style="font-size: 0.8rem; margin-bottom: 4px; line-height: 1.45;">
+              Student attendance is locked to their registered device. If a student loses or replaces their phone, enter their roll number to unbind it. They will be prompted to register their new device upon their next login.
+            </p>
+            <div class="field">
+              <label for="input-reset-roll">Student Roll Number</label>
+              <input class="input mono" id="input-reset-roll" placeholder="e.g. B24CS1001" style="text-transform: uppercase;">
+            </div>
+            <button class="btn btn-ghost" id="btn-reset-device-form" style="width: 100%; color: var(--warn); border-color: rgba(234, 179, 8, 0.3);">
+              Reset & Unbind Device
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /teacher-main -->
   </div><!-- /teacher-shell -->
 
-  <script src="shared.js?v=9"></script>
-  <script src="teacher.js?v=9"></script>
+  <script src="shared.js?v=10"></script>
+  <script src="teacher.js?v=10"></script>
 </body>
 </html>

@@ -136,6 +136,13 @@ button { font-family: inherit; cursor: pointer; outline: none; border: none; }
   align-items: start;
 }
 
+.manage-students-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
 .live-stage-grid {
   display: grid;
   grid-template-columns: minmax(320px, 1.2fr) minmax(260px, 0.8fr);
@@ -146,6 +153,7 @@ button { font-family: inherit; cursor: pointer; outline: none; border: none; }
 @media (max-width: 860px) {
   .overview-grid,
   .manage-courses-grid,
+  .manage-students-grid,
   .live-stage-grid {
     grid-template-columns: 1fr;
   }
