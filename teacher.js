@@ -135,7 +135,9 @@ function renderOverview() {
 
   const panel = document.getElementById('at-risk-panel');
   if (atRisk.length === 0) {
-    panel.innerHTML = `<div class="empty-state"><p>No one is below 75 % right now.</p></div>`;
+    panel.innerHTML = `
+      <div class="ledger-head"><h3>Below 75%</h3><span class="meta">0 students</span></div>
+      <div class="empty-state"><p>All enrolled students are currently at or above 75% attendance.</p></div>`;
   } else {
     panel.innerHTML = `<div class="ledger-head"><h3>Below 75%</h3><span class="meta">${atRisk.length} student${atRisk.length === 1 ? '' : 's'}</span></div>
       <div class="ledger-body--flush">` + atRisk.map(s => `

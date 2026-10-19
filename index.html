@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#09090b">
-  <title>Attendance — Student</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#0b0f17">
+  <title>Attendance Portal — IIT Jodhpur</title>
+  <link rel="stylesheet" href="style.css?v=5">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@14.0.0/dist/bundle/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
@@ -53,11 +53,10 @@
       </div>
 
       <!-- ---- HOME ---- -->
-      <div class="view is-active" id="view-home"
-        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
+      <div class="view is-active container" id="view-home">
 
         <!-- Identity card (IDs required by renderIdentity()) -->
-        <div class="bento-card" style="margin-bottom: 20px; display: flex; align-items: center; gap: 16px;">
+        <div class="card" style="margin-bottom: 20px; display: flex; align-items: center; gap: 16px;">
           <div class="avatar" id="home-avatar">?</div>
           <div style="min-width: 0;">
             <div id="home-name" style="font-weight: 600; font-size: clamp(0.95rem, 2vw, 1.1rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
@@ -65,12 +64,12 @@
           </div>
         </div>
 
-        <!-- Courses + scanner bento row -->
-        <div class="bento-grid" style="margin-bottom: 24px;">
-          <div class="bento-card stack">
+        <!-- Courses row -->
+        <div style="margin-bottom: 24px;">
+          <div class="card stack">
             <div class="spread">
-              <h3 class="bento-header" style="margin-bottom: 0;">My Courses</h3>
-              <button class="link-btn" id="btn-add-course">+ Add</button>
+              <h3 class="card-header" style="margin-bottom: 0;">My Courses</h3>
+              <button class="link-btn" id="btn-add-course">+ Add Course</button>
             </div>
             <!-- JS renders course rows into this element -->
             <div id="course-list">
@@ -80,15 +79,14 @@
           </div>
         </div>
 
-        <!-- Attendance donuts (JS renders into this) -->
-        <h3 class="bento-header" style="margin-bottom: 14px;">Attendance Overview</h3>
+        <!-- Attendance overview -->
+        <h3 class="card-header" style="margin-bottom: 14px;">Attendance Overview</h3>
         <div id="course-donut-list"></div>
       </div>
 
       <!-- ---- RECORDS ---- -->
-      <div class="view" id="view-records"
-        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
-        <h1 style="margin-bottom: 20px; font-size: clamp(1.3rem, 3vw, 1.7rem);">Records</h1>
+      <div class="view container" id="view-records">
+        <h1 style="margin-bottom: 20px; font-size: clamp(1.3rem, 3vw, 1.7rem);">Attendance Records</h1>
         <!-- JS renders into this element -->
         <div id="records-list">
           <div class="skel skel-row"></div>
@@ -98,12 +96,11 @@
       </div>
 
       <!-- ---- COURSE DETAIL ---- -->
-      <div class="view" id="view-course-detail"
-        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
+      <div class="view container" id="view-course-detail">
         <button class="link-btn" id="btn-back-records" style="padding-left: 0; margin-bottom: 18px;">
-          &larr; Records
+          &larr; Back to Records
         </button>
-        <div class="bento-card" style="margin-bottom: 20px;">
+        <div class="card" style="margin-bottom: 20px;">
           <div class="donut-row">
             <div id="detail-donut"></div>
             <div>
@@ -112,7 +109,7 @@
             </div>
           </div>
         </div>
-        <h3 class="bento-header" style="margin-bottom: 12px;">Lecture History</h3>
+        <h3 class="card-header" style="margin-bottom: 12px;">Lecture History</h3>
         <!-- JS renders rows into this element -->
         <div class="ledger" style="overflow: hidden;">
           <div class="ledger-body--flush" id="detail-lecture-list"></div>
@@ -120,26 +117,25 @@
       </div>
 
       <!-- ---- PROFILE ---- -->
-      <div class="view" id="view-profile"
-        style="padding: 24px 20px 90px; max-width: 800px; margin: 0 auto; width: 100%;">
-        <h1 style="margin-bottom: 20px; font-size: clamp(1.3rem, 3vw, 1.7rem);">Profile</h1>
-        <div class="bento-card stack" style="margin-bottom: 16px;">
+      <div class="view container" id="view-profile">
+        <h1 style="margin-bottom: 20px; font-size: clamp(1.3rem, 3vw, 1.7rem);">Student Profile</h1>
+        <div class="card stack" style="margin-bottom: 16px;">
           <div>
-            <label class="text-dim" style="font-size: clamp(0.68rem, 1.2vw, 0.75rem); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Name</label>
-            <div id="profile-name" style="font-size: clamp(0.95rem, 2vw, 1.05rem); font-weight: 500;">—</div>
+            <label class="text-dim" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Name</label>
+            <div id="profile-name" style="font-size: 1rem; font-weight: 500;">—</div>
           </div>
           <div>
-            <label class="text-dim" style="font-size: clamp(0.68rem, 1.2vw, 0.75rem); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Roll number</label>
-            <div class="mono" id="profile-roll" style="font-size: clamp(0.95rem, 2vw, 1.05rem); font-weight: 500;">—</div>
+            <label class="text-dim" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Roll number</label>
+            <div class="mono" id="profile-roll" style="font-size: 1rem; font-weight: 500;">—</div>
           </div>
           <div>
-            <label class="text-dim" style="font-size: clamp(0.68rem, 1.2vw, 0.75rem); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Institute email</label>
-            <div class="mono text-dim" id="profile-email" style="font-size: clamp(0.82rem, 1.5vw, 0.9rem);">—</div>
+            <label class="text-dim" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Institute email</label>
+            <div class="mono text-dim" id="profile-email" style="font-size: 0.88rem;">—</div>
           </div>
           <button class="btn btn-ghost" id="btn-edit-profile" style="width: fit-content; margin-top: 4px;">Edit profile</button>
         </div>
-        <p class="text-dim" style="font-size: clamp(0.78rem, 1.4vw, 0.85rem); padding: 0 4px;">
-          Editing requires a fresh fingerprint check and cannot be used to re-mark attendance already logged under a different roll number.
+        <p class="text-dim" style="font-size: 0.82rem; padding: 0 4px;">
+          Profile updates require biometric verification. Attendance records remain permanently linked to your student identity.
         </p>
       </div>
 
@@ -175,8 +171,8 @@
                   align-items: center; text-align: center; pointer-events: none;">
 
         <!-- Course title pill -->
-        <div class="glass-panel" style="padding: 10px 22px; border-radius: var(--r-xl); pointer-events: auto; margin-top: 16px;">
-          <h2 id="scan-course-title" style="font-size: clamp(0.95rem, 2vw, 1.1rem); margin: 0;"></h2>
+        <div class="card" style="padding: 8px 20px; border-radius: 999px; pointer-events: auto; margin-top: 16px;">
+          <h2 id="scan-course-title" style="font-size: clamp(0.95rem, 2vw, 1.05rem); margin: 0;"></h2>
         </div>
 
         <!-- Countdown badge — top-right -->
@@ -189,35 +185,35 @@
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center;
                     justify-content: center; gap: 16px; width: 100%;">
 
-          <!-- Biometric waiting state with radar pulse -->
-          <div id="scan-verify-state" class="radar-glow" style="pointer-events: auto;">
-            <div class="glass-panel" style="padding: 32px 40px; border-radius: var(--r-xl); text-align: center;">
+          <!-- Biometric waiting state -->
+          <div id="scan-verify-state" style="pointer-events: auto;">
+            <div class="scan-panel">
               <div class="spinner" style="width: 28px; height: 28px; margin: 0 auto 16px;"></div>
               <p style="font-weight: 600; font-size: clamp(1rem, 2vw, 1.1rem); margin: 0;">Awaiting Biometrics</p>
-              <p class="text-dim" style="font-size: clamp(0.78rem, 1.5vw, 0.85rem); margin-top: 8px;">Please verify your identity</p>
+              <p class="text-dim" style="font-size: 0.85rem; margin-top: 8px;">Verify your fingerprint / face unlock</p>
             </div>
           </div>
 
           <!-- Success state -->
           <div id="scan-success-state" class="hidden stack" style="align-items: center; pointer-events: auto;">
             <div class="stamp">✓</div>
-            <p style="font-weight: 600; font-size: clamp(1rem, 2vw, 1.1rem); margin-top: 16px;">Attendance Verified</p>
+            <p style="font-weight: 600; font-size: 1.1rem; margin-top: 14px;">Attendance Recorded</p>
           </div>
 
           <!-- Fail state -->
           <div id="scan-fail-state" class="hidden stack" style="align-items: center; pointer-events: auto;">
-            <div class="glass-panel" style="padding: 28px 36px; border-radius: var(--r-xl);">
-              <div style="color: var(--danger); font-size: 2.8rem; margin-bottom: 10px;">✕</div>
-              <p style="font-weight: 600; font-size: clamp(0.9rem, 2vw, 1rem);" id="scan-fail-text">Verification Failed</p>
+            <div class="scan-panel">
+              <div style="color: var(--danger); font-size: 2.2rem; line-height: 1; margin-bottom: 8px;">✕</div>
+              <p style="font-weight: 600; font-size: 0.95rem;" id="scan-fail-text">Verification Failed</p>
             </div>
           </div>
         </div>
 
         <!-- Hint text -->
         <p class="text-dim hidden" id="scan-hint"
-          style="pointer-events: auto; margin-bottom: 14px; font-size: clamp(0.78rem, 1.5vw, 0.85rem);
-                 background: var(--glass-bg); padding: 8px 18px; border-radius: 100px; border: 1px solid var(--border-plain);">
-          Point camera at QR code — pinch to zoom
+          style="pointer-events: auto; margin-bottom: 14px; font-size: 0.82rem;
+                 background: var(--bg-surface); padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border);">
+          Point camera at the rotating classroom QR code
         </p>
 
         <!-- Close button -->
@@ -280,7 +276,7 @@
     </div>
   </div>
 
-  <script src="shared.js?v=4"></script>
-  <script src="attendance.js?v=4"></script>
+  <script src="shared.js?v=5"></script>
+  <script src="attendance.js?v=5"></script>
 </body>
 </html>

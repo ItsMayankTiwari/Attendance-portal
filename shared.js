@@ -129,7 +129,7 @@ function confirmSheet({ title, body, confirmLabel = 'Confirm', danger = false })
         <h3 style="margin-bottom:8px;">${esc(title)}</h3>
         <p class="text-dim" style="margin-bottom:18px;">${esc(body)}</p>
         <div class="btn-row">
-          <button class="btn btn-ghost-paper" data-act="cancel">Cancel</button>
+          <button class="btn btn-ghost" data-act="cancel">Cancel</button>
           <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok">${esc(confirmLabel)}</button>
         </div>
       </div>`;
