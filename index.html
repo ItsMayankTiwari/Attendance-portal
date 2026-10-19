@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#090d14">
   <title>Attendance Portal — IIT Jodhpur</title>
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@14.0.0/dist/bundle/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
@@ -233,11 +233,25 @@
             </div>
           </div>
 
-          <div id="scan-fail-state" class="hidden" style="pointer-events: auto;">
-            <div class="scan-panel">
+          <div id="scan-fail-state" class="hidden" style="pointer-events: auto; width: 100%; display: flex; justify-content: center;">
+            <div class="scan-panel" style="max-width: 380px;">
               <div style="color: var(--absent-strong); font-size: 1.8rem; line-height: 1; margin-bottom: 10px;">✕</div>
-              <p style="font-weight: 600; font-size: 0.92rem; margin-bottom: 16px;" id="scan-fail-text">Verification Failed</p>
-              <button class="btn btn-primary btn-sm" id="btn-scan-retry" style="width: 100%;">Try Again</button>
+              <p style="font-weight: 600; font-size: 0.94rem; margin-bottom: 12px;" id="scan-fail-text">Verification Failed</p>
+
+              <div id="scan-location-help" class="location-help-box hidden">
+                <div class="location-help-title" id="location-help-title">How to unblock Location access:</div>
+                <ol class="location-help-steps" id="location-help-steps"></ol>
+                <div class="location-help-note">
+                  Once you switch Location to <strong>Allow</strong>, this screen will detect it automatically or you can tap the button below.
+                </div>
+              </div>
+
+              <div class="stack" style="gap: 8px; margin-top: 14px;">
+                <button class="btn btn-primary btn-sm" id="btn-scan-retry" style="width: 100%;">Try Again</button>
+                <button class="btn btn-ghost btn-sm hidden" id="btn-recheck-location" style="width: 100%;">
+                  Test Location &amp; Re-prompt
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -307,7 +321,7 @@
     </div>
   </div>
 
-  <script src="shared.js?v=10"></script>
-  <script src="attendance.js?v=10"></script>
+  <script src="shared.js?v=11"></script>
+  <script src="attendance.js?v=11"></script>
 </body>
 </html>

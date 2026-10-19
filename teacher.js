@@ -641,7 +641,8 @@ async function refreshQr() {
   qrTimer = setTimeout(refreshQr, waitMs);
 }
 
-document.getElementById('btn-fullscreen-qr').onclick = () => {
+const fullscreenBtn = document.getElementById('btn-fullscreen-qr');
+fullscreenBtn.onclick = () => {
   const target = document.getElementById('live-fullscreen-target');
   if (!document.fullscreenElement) {
     target.requestFullscreen?.().catch(() => {});
@@ -649,6 +650,12 @@ document.getElementById('btn-fullscreen-qr').onclick = () => {
     document.exitFullscreen?.().catch(() => {});
   }
 };
+
+document.addEventListener('fullscreenchange', () => {
+  if (fullscreenBtn) {
+    fullscreenBtn.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+  }
+});
 
 async function refreshLiveRoster() {
   if (!activeSessionId) return;

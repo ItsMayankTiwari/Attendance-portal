@@ -25,14 +25,20 @@ function googleSignIn(redirectTo) {
 // ---- toasts ---------------------------------------------------------------
 
 function ensureToastStack() {
+  const host = document.fullscreenElement || document.body;
   let stack = document.querySelector('.toast-stack');
   if (!stack) {
     stack = document.createElement('div');
     stack.className = 'toast-stack';
-    document.body.appendChild(stack);
   }
+  if (stack.parentElement !== host) host.appendChild(stack);
   return stack;
 }
+
+document.addEventListener('fullscreenchange', () => {
+  const stack = document.querySelector('.toast-stack');
+  if (stack) (document.fullscreenElement || document.body).appendChild(stack);
+});
 
 function toast(message, variant) {
   const stack = ensureToastStack();
@@ -133,7 +139,7 @@ function confirmSheet({ title, body, confirmLabel = 'Confirm', danger = false })
           <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok">${esc(confirmLabel)}</button>
         </div>
       </div>`;
-    document.body.appendChild(backdrop);
+    (document.fullscreenElement || document.body).appendChild(backdrop);
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop || e.target.dataset.act === 'cancel') { backdrop.remove(); resolve(false); }
       if (e.target.dataset.act === 'ok') { backdrop.remove(); resolve(true); }

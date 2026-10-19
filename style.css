@@ -964,6 +964,49 @@ select.input {
 }
 
 /* ==========================================================================
+   Location Permission Recovery Box (Student Scanner)
+   ========================================================================== */
+
+.location-help-box {
+  text-align: left;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.location-help-title {
+  font-weight: 600;
+  color: var(--warn);
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+}
+
+.location-help-steps {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.location-help-steps li strong {
+  color: var(--accent-light);
+}
+
+.location-help-note {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+/* ==========================================================================
    Scan Overlay (Student)
    ========================================================================== */
 

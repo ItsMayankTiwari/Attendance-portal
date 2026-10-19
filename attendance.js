@@ -324,6 +324,9 @@ document.getElementById('btn-confirm-add-course').onclick = async () => {
 
 // ---------------------------------------------------------------- QR scanner + WebAuthn + GPS
 
+let geoPermissionStatus = null;
+let locationRecoveryRestarting = false;
+
 function beginAttemptCountdown() {
   const timeEl = document.getElementById('scan-time');
   attemptEndsAt = Date.now() + ATTEMPT_SECONDS * 1000;
@@ -341,10 +344,116 @@ function cancelFingerprintPrompt() {
   try { SimpleWebAuthnBrowser.WebAuthnAbortService.cancelCeremony(); } catch (e) { }
 }
 
-function showScanFail(msg) {
+function getDeviceLocationSteps(errorCode) {
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+
+  if (errorCode && errorCode !== 1) {
+    if (isIOS) {
+      return {
+        title: 'Turn on iPhone Location Services:',
+        steps: [
+          'Open <strong>iOS Settings</strong> → <strong>Privacy &amp; Security</strong> → <strong>Location Services</strong>.',
+          'Ensure <strong>Location Services</strong> is turned <strong>ON</strong>.',
+          'Scroll to <strong>Safari Websites</strong> (or Chrome) and select <strong>While Using the App</strong>.'
+        ]
+      };
+    }
+    if (isAndroid) {
+      return {
+        title: 'Turn on Phone GPS / Location:',
+        steps: [
+          'Swipe down from the top of your screen to open <strong>Quick Settings</strong>.',
+          'Tap the <strong>Location / GPS</strong> tile to turn it <strong>ON</strong>.',
+          'Return here and tap <strong>Test Location &amp; Re-prompt</strong> below.'
+        ]
+      };
+    }
+  }
+
+  if (isIOS) {
+    return {
+      title: 'Location was blocked in Safari/iOS. To allow it:',
+      steps: [
+        'Tap the <strong>aA</strong> or <strong>Page Settings</strong> icon on the left side of the address bar.',
+        'Tap <strong>Website Settings</strong> → <strong>Location</strong> → select <strong>Allow</strong>.',
+        'If still blocked, open <strong>iOS Settings → Privacy &amp; Security → Location Services → Safari Websites</strong> and set to <strong>While Using</strong>.'
+      ]
+    };
+  }
+  if (isAndroid) {
+    return {
+      title: 'Location was blocked in your browser. To allow it right now:',
+      steps: [
+        'Tap the <strong>Tune / Lock icon</strong> on the far left of the address bar at the top of this screen.',
+        'Tap <strong>Permissions</strong> (or <strong>Site settings</strong>).',
+        'Tap <strong>Location</strong> and switch it to <strong>Allow</strong>.'
+      ]
+    };
+  }
+  return {
+    title: 'Location permission is blocked for this site:',
+    steps: [
+      'Click the <strong>Site Settings / Lock icon</strong> on the left side of your browser address bar.',
+      'Toggle <strong>Location</strong> to <strong>Allow</strong>.',
+      'Click <strong>Test Location &amp; Re-prompt</strong> below.'
+    ]
+  };
+}
+
+async function watchLocationPermissionGrant() {
+  if (!navigator.permissions || !navigator.permissions.query) return;
+  try {
+    if (geoPermissionStatus) geoPermissionStatus.onchange = null;
+    geoPermissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+    geoPermissionStatus.onchange = () => {
+      const failState = document.getElementById('scan-fail-state');
+      if (geoPermissionStatus.state === 'granted' && activeScanCourse && !failState.classList.contains('hidden')) {
+        toast('Location access enabled! Restarting scanner…', 'success');
+        restartScannerAfterLocationGrant();
+      }
+    };
+  } catch (e) {
+    geoPermissionStatus = null;
+  }
+}
+
+function clearLocationPermissionWatcher() {
+  if (!geoPermissionStatus) return;
+  geoPermissionStatus.onchange = null;
+  geoPermissionStatus = null;
+}
+
+async function restartScannerAfterLocationGrant() {
+  if (!activeScanCourse || locationRecoveryRestarting || scanPhase === 'scanning' || scanPhase === 'verifying') return;
+  locationRecoveryRestarting = true;
+  try {
+    const course = activeScanCourse;
+    await startAttendance(course.id, course.name);
+  } finally {
+    locationRecoveryRestarting = false;
+  }
+}
+
+function showScanFail(msg, options = {}) {
   ['scan-camera-state', 'scan-time-wrap', 'scan-hint', 'scan-verify-state']
     .forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById('scan-fail-text').textContent = msg;
+
+  const helpBox = document.getElementById('scan-location-help');
+  const recheckBtn = document.getElementById('btn-recheck-location');
+  if (options.isLocationError) {
+    const guide = getDeviceLocationSteps(options.geoCode || 1);
+    document.getElementById('location-help-title').textContent = guide.title;
+    document.getElementById('location-help-steps').innerHTML = guide.steps.map(step => `<li>${step}</li>`).join('');
+    helpBox.classList.remove('hidden');
+    recheckBtn.classList.remove('hidden');
+    watchLocationPermissionGrant();
+  } else {
+    helpBox.classList.add('hidden');
+    recheckBtn.classList.add('hidden');
+  }
   document.getElementById('scan-fail-state').classList.remove('hidden');
 }
 
@@ -360,16 +469,20 @@ function onAttemptTimeout() {
 function getLocationAsync() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      return reject(new Error('Geolocation is not supported by this browser.'));
+      const err = new Error('Geolocation is not supported by this browser.');
+      err.isLocationError = true;
+      return reject(err);
     }
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
       (e) => {
-        if (e && e.code === 1) {
-          reject(new Error('Location permission denied. Enable GPS access in browser settings and retry.'));
-        } else {
-          reject(new Error('Could not acquire GPS fix. Ensure Location Services are enabled and retry.'));
-        }
+        const isDenied = e && e.code === 1;
+        const err = new Error(isDenied
+          ? 'Location permission is blocked. Follow the steps below to allow Location access.'
+          : 'Could not acquire GPS signal. Make sure Location Services / GPS are turned ON.');
+        err.isLocationError = true;
+        err.geoCode = e ? e.code : 1;
+        reject(err);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
@@ -381,6 +494,7 @@ async function startAttendance(courseId, courseName) {
     toast('Scanner library failed to load. Reload the page.', 'error');
     return;
   }
+  clearLocationPermissionWatcher();
   const cleanCourseId = courseId && courseId !== 'undefined' && courseId !== 'null' ? String(courseId).trim() : null;
   safeStopScanner();
   activeScanCourse = { id: cleanCourseId, name: courseName };
@@ -393,6 +507,22 @@ async function startAttendance(courseId, courseName) {
   document.getElementById('scan-success-state').classList.add('hidden');
   document.getElementById('scan-fail-state').classList.add('hidden');
   show('screen-scan');
+
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      if (permission.state === 'denied') {
+        scanPhase = 'done';
+        showScanFail('Location access is blocked for this website. Allow Location below before scanning.', {
+          isLocationError: true,
+          geoCode: 1
+        });
+        return;
+      }
+    } catch (e) {
+      // Continue with the normal geolocation request if permission state cannot be queried.
+    }
+  }
 
   scanPhase = 'scanning';
   beginAttemptCountdown();
@@ -457,7 +587,11 @@ async function startAttendance(courseId, courseName) {
         if (scanPhase === 'done') return;
         scanPhase = 'done';
         clearScanCountdown();
-        showScanFail(err.message || 'Could not mark attendance.');
+        const isLocationError = !!(err && (err.isLocationError || /location|gps/i.test(err.message)));
+        showScanFail(err.message || 'Could not mark attendance.', {
+          isLocationError,
+          geoCode: err && err.geoCode || 1
+        });
       }
     },
     () => { }
@@ -468,6 +602,9 @@ async function startAttendance(courseId, courseName) {
     }
     enablePinchToZoom();
   }).catch((err) => {
+    scanPhase = 'done';
+    clearScanCountdown();
+    safeStopScanner();
     showScanFail('Camera error: ' + (err.name || err.message || err));
   });
 }
@@ -475,6 +612,22 @@ async function startAttendance(courseId, courseName) {
 document.getElementById('btn-scan-retry').onclick = () => {
   if (activeScanCourse) {
     startAttendance(activeScanCourse.id, activeScanCourse.name);
+  }
+};
+
+document.getElementById('btn-recheck-location').onclick = async () => {
+  const btn = document.getElementById('btn-recheck-location');
+  btn.disabled = true;
+  btn.textContent = 'Checking GPS…';
+  try {
+    await getLocationAsync();
+    toast('Location verified! Opening scanner…', 'success');
+    await restartScannerAfterLocationGrant();
+  } catch (err) {
+    showScanFail(err.message, { isLocationError: true, geoCode: err && err.geoCode || 1 });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Test Location & Re-prompt';
   }
 };
 
@@ -532,6 +685,7 @@ function clearScanCountdown() { clearInterval(scanTimer); scanTimer = null; }
 
 function closeScan() {
   scanPhase = 'done';
+  clearLocationPermissionWatcher();
   cancelFingerprintPrompt();
   clearScanCountdown();
   disablePinchToZoom();
