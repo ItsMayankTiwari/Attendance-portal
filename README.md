@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/banner/hero.png" alt="IITJ Attendance Portal: the instructor console and the student mobile app" width="100%">
+<img src="docs/hero.png" alt="IITJ Attendance Portal: the instructor console and the student mobile app" width="100%">
 
 <br>
 
@@ -10,7 +10,7 @@
 
 <p>
   <a href="https://attendance-iitj.vercel.app"><img alt="Live app" src="https://img.shields.io/badge/Live_App-Open-2563eb?style=for-the-badge&logo=vercel&logoColor=white"></a>
-  <a href="docs/report/IITJ_Attendance_Portal_Design_Credit_Report.pdf"><img alt="Design report" src="https://img.shields.io/badge/Design_Report-PDF_(13_pages)-dc2626?style=for-the-badge&logo=adobeacrobatreader&logoColor=white"></a>
+  <a href="docs/IITJ_Attendance_Portal_Design_Credit_Report%20%281%29.pdf"><img alt="Design report" src="https://img.shields.io/badge/Design_Report-PDF_(13_pages)-dc2626?style=for-the-badge&logo=adobeacrobatreader&logoColor=white"></a>
 </p>
 
 <p>
@@ -32,10 +32,11 @@
   <a href="#team">Team</a>
 </p>
 
+  <img src="docs/01-four-layer-verification.png" alt="Four sequential verification gates: identity, rotating QR, hardware passkey and GPS, each blocking a different proxy attempt" width="100%">
 </div>
 
 > [!NOTE]
-> **Visiting from campus placements?** Sign-in is restricted to `@iitj.ac.in` Google accounts, so the live app can only be opened by IIT Jodhpur students and staff. Everything it does is shown in the [screenshots](#screenshots) below and in the [13-page design report](docs/report/IITJ_Attendance_Portal_Design_Credit_Report.pdf).
+> **Visiting from campus placements?** Sign-in is restricted to `@iitj.ac.in` Google accounts, so the live app can only be opened by IIT Jodhpur students and staff. Everything it does is shown in the [screenshots](#screenshots) below and in the [13-page design report](docs/IITJ_Attendance_Portal_Design_Credit_Report%20%281%29.pdf).
 
 ---
 
@@ -105,7 +106,7 @@ There are no photos, no face recognition and no tracking. The fingerprint or fac
 Every common way of faking attendance is blocked by a dedicated layer.
 
 <div align="center">
-  <img src="docs/figures/01-four-layer-verification.png" alt="Four sequential verification gates: identity, rotating QR, hardware passkey and GPS, each blocking a different proxy attempt" width="100%">
+  <img src="docs/01-four-layer-verification.png" alt="Four sequential verification gates: identity, rotating QR, hardware passkey and GPS, each blocking a different proxy attempt" width="100%">
 </div>
 
 | How students try to cheat | What stops it |
@@ -138,10 +139,10 @@ Every common way of faking attendance is blocked by a dedicated layer.
 
 <table>
   <tr>
-    <td align="center" width="25%"><img src="docs/screenshots/student-dashboard.png" alt="Student dashboard with overall attendance and enrolled courses"><br><sub><b>Dashboard</b><br>Overall attendance, 75% policy status and one-tap <i>Scan QR</i> per course</sub></td>
-    <td align="center" width="25%"><img src="docs/screenshots/student-course-detail.png" alt="Course detail with attendance ring and lecture history"><br><sub><b>Course detail</b><br>Attendance ring, "attend the next 4 classes for 75%" guidance and lecture history</sub></td>
-    <td align="center" width="25%"><img src="docs/screenshots/student-checkin-success.png" alt="Attendance recorded confirmation"><br><sub><b>Check-in</b><br>Scan, fingerprint, done</sub></td>
-    <td align="center" width="25%"><img src="docs/screenshots/student-records.png" alt="Attendance records for each course"><br><sub><b>Records</b><br>Every course at a glance against the 75% minimum</sub></td>
+    <td align="center" width="25%"><img src="docs/student-dashboard.png" alt="Student dashboard with overall attendance and enrolled courses"><br><sub><b>Dashboard</b><br>Overall attendance, 75% policy status and one-tap <i>Scan QR</i> per course</sub></td>
+    <td align="center" width="25%"><img src="docs/student-course-detail.png" alt="Course detail with attendance ring and lecture history"><br><sub><b>Course detail</b><br>Attendance ring, "attend the next 4 classes for 75%" guidance and lecture history</sub></td>
+    <td align="center" width="25%"><img src="docs/student-checkin-success.png" alt="Attendance recorded confirmation"><br><sub><b>Check-in</b><br>Scan, fingerprint, done</sub></td>
+    <td align="center" width="25%"><img src="docs/student-records.png" alt="Attendance records for each course"><br><sub><b>Records</b><br>Every course at a glance against the 75% minimum</sub></td>
   </tr>
 </table>
 
@@ -150,16 +151,15 @@ Every common way of faking attendance is blocked by a dedicated layer.
 
 <table>
   <tr>
-    <td width="50%" valign="top"><img src="docs/screenshots/instructor-live-qr-projector.png" alt="Fullscreen rotating QR code with live check-in counter"><br><sub><b>Live session</b><br>Fullscreen QR for the projector, a countdown bar for each rotation and a live count of students checked in</sub></td>
-    <td width="50%" valign="top"><img src="docs/screenshots/instructor-class-overview.png" alt="Class overview with average attendance and students below 75 percent"><br><sub><b>Class overview</b><br>Average attendance, students below 75% and each student's device status</sub></td>
+    <td width="50%" valign="top"><img src="docs/instructor-live-qr-projector.png" alt="Fullscreen rotating QR code with live check-in counter"><br><sub><b>Live session</b><br>Fullscreen QR for the projector, a countdown bar for each rotation and a live count of students checked in</sub></td>
+    <td width="50%" valign="top"><img src="docs/instructor-class-overview.png" alt="Class overview with average attendance and students below 75 percent"><br><sub><b>Class overview</b><br>Average attendance, students below 75% and each student's device status</sub></td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><img src="docs/screenshots/instructor-attendance-sheet.png" alt="Lecture matrix with manual override"><br><sub><b>Attendance sheet</b><br>Student-by-lecture matrix where one click toggles present or absent</sub></td>
-    <td width="50%" valign="top"><img src="docs/screenshots/instructor-location-map.png" alt="GPS verification map of the IIT Jodhpur campus"><br><sub><b>Location map</b><br>Every check-in plotted on the IIT Jodhpur campus, with off-campus scans highlighted</sub></td>
+    <td width="100%" colspan="2" valign="top"><img src="docs/instructor-attendance-sheet.png" alt="Lecture matrix with manual override"><br><sub><b>Attendance sheet</b><br>Student-by-lecture matrix where one click toggles present or absent</sub></td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><img src="docs/screenshots/instructor-manage-courses.png" alt="Course management and teaching assistant assignment"><br><sub><b>Manage courses</b><br>Create courses and assign teaching assistants</sub></td>
-    <td width="50%" valign="top"><img src="docs/screenshots/instructor-manage-students.png" alt="Roll number correction and device reset tools"><br><sub><b>Manage students</b><br>Correct roll numbers and reset a student's device</sub></td>
+    <td width="50%" valign="top"><img src="docs/instructor-manage-courses.png" alt="Course management and teaching assistant assignment"><br><sub><b>Manage courses</b><br>Create courses and assign teaching assistants</sub></td>
+    <td width="50%" valign="top"><img src="docs/instructor-manage-students.png" alt="Roll number correction and device reset tools"><br><sub><b>Manage students</b><br>Correct roll numbers and reset a student's device</sub></td>
   </tr>
 </table>
 
@@ -226,7 +226,7 @@ sequenceDiagram
 The portal is a lightweight, zero-install web app in three tiers: the browsers, a single Vercel serverless API, and Supabase for authentication and storage.
 
 <div align="center">
-  <img src="docs/figures/02-system-architecture.png" alt="Three-tier architecture: client browsers, Vercel serverless API and Supabase backend" width="100%">
+  <img src="docs/02-system-architecture.png" alt="Three-tier architecture: client browsers, Vercel serverless API and Supabase backend" width="100%">
 </div>
 
 ### Deep dives
@@ -251,7 +251,7 @@ payload = `${session_id}:${bucket}:${mac}`;
 - The scanned course is checked against the selected course, so students are warned if they pick the wrong one.
 
 <div align="center">
-  <img src="docs/figures/03-qr-rotation-and-grace-window.png" alt="Timeline of the 4 second QR bucket with a 2.5 second grace window, and latency of an in-class scan against a relayed photo" width="100%">
+  <img src="docs/02-system-architecture.png" alt="Three-tier architecture: client browsers, Vercel serverless API and Supabase backend" width="100%">
 </div>
 
 | Constant | Value | Purpose |
@@ -277,7 +277,7 @@ Rotating QR codes stop remote photo sharing. To stop **account sharing inside th
 - Before the signature is verified, the challenge is **consumed atomically** with a compare-and-clear update. A captured response can never be replayed.
 
 <div align="center">
-  <img src="docs/figures/04-passkey-binding-and-checkin.png" alt="Passkey registration and the 30 second atomic check-in ceremony" width="100%">
+  <img src="docs/04-passkey-binding-and-checkin.png" alt="Passkey registration and the 30 second atomic check-in ceremony" width="100%">
 </div>
 
 </details>
@@ -299,7 +299,7 @@ d = 2 · R · atan2(√a, √(1 − a))        R = 6 371 000 m
 - If a student taps "Never allow" on the browser's permission prompt, mobile browsers won't ask again. The portal detects the blocked state up front, shows platform-specific steps for Android Chrome or iOS Safari, and restarts the scanner automatically when permission is granted.
 
 <div align="center">
-  <img src="docs/figures/05-gps-geofence-and-permission-recovery.png" alt="Haversine geofence with off-campus outliers, and the location permission recovery flow" width="100%">
+  <img src="docs/05-gps-geofence-and-permission-recovery.png" alt="Haversine geofence with off-campus outliers, and the location permission recovery flow" width="100%">
 </div>
 
 </details>
@@ -312,7 +312,7 @@ d = 2 · R · atan2(√a, √(1 − a))        R = 6 371 000 m
 Six tables on Supabase PostgreSQL. Foreign keys cascade, so deleting a course removes its sessions, enrolments and staff. `UNIQUE (student_id, course_id)` on enrolments and `UNIQUE (student_id, session_id)` on attendance records prevent duplicates at the database level.
 
 <div align="center">
-  <img src="docs/figures/06-database-er-schema.png" alt="Entity-relationship diagram of the six tables" width="100%">
+  <img src="docs/06-database-er-schema.png" alt="Entity-relationship diagram of the six tables" width="100%">
 </div>
 
 **Row-level security** is enabled on every table with restrictive deny-all policies. The public anon key shipped to the browser can't read or write anything. All real access goes through the API, which uses the server-only service-role key.
@@ -330,7 +330,7 @@ For `A` classes attended out of `T` held:
 - At or above 75%: the student can safely miss `y = ⌊(4A − 3T) / 3⌋` classes.
 
 <div align="center">
-  <img src="docs/figures/07-attendance-guidance-and-distribution.png" alt="Classes needed to reach 75 percent against the safe buffer, and a class attendance distribution" width="100%">
+  <img src="docs/07-attendance-guidance-and-distribution.png" alt="Classes needed to reach 75 percent against the safe buffer, and a class attendance distribution" width="100%">
 </div>
 
 </details>
@@ -478,7 +478,7 @@ npx vercel --prod
 
 ## Documentation
 
-The full **[Design Credit Project Report](docs/report/IITJ_Attendance_Portal_Design_Credit_Report.pdf)** (13 pages) covers the proxy-attendance problem, the system architecture, the QR and passkey protocols, the GPS geofence, the database schema, a complete API reference and the conclusions. Its figures are in [`docs/figures`](docs/figures).
+The full **[Design Credit Project Report](docs/IITJ_Attendance_Portal_Design_Credit_Report%20%281%29.pdf)** (13 pages) covers the proxy-attendance problem, the system architecture, the QR and passkey protocols, the GPS geofence, the database schema, a complete API reference and the conclusions. Its figures are in [`docs/`](docs/).
 
 ---
 
