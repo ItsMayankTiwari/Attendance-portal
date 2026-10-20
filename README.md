@@ -145,6 +145,7 @@ Every common way of faking attendance is blocked by a dedicated layer.
   </tr>
 </table>
 
+
 ### Instructor console (desktop)
 
 <table>
