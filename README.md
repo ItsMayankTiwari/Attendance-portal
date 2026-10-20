@@ -25,7 +25,7 @@
 
 <p>
   <a href="#at-a-glance">At a glance</a> ·
-  <a href="#what-this-project-demonstrates">For recruiters</a> ·
+  <a href="#what-this-project-demonstrates">Project detail</a> ·
   <a href="#screenshots">Screenshots</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#run-it-yourself">Run it yourself</a> ·
@@ -35,7 +35,7 @@
 </div>
 
 > [!NOTE]
-> **Visiting from campus placements?** Sign-in is restricted to `@iitj.ac.in` Google accounts, so the live app can only be opened by IIT Jodhpur students and staff. Everything it does is shown in the [screenshots](#screenshots) below and in the [13-page design report](docs/IITJ_Attendance_Portal_Design_Credit_Report.pdf).
+> **Not from the IITJ college?** Sign-in is restricted to `@iitj.ac.in` Google accounts, so the live app can only be opened by IIT Jodhpur students and staff. Everything it does is shown in the [screenshots](#screenshots) below and in the [13-page design report](docs/IITJ_Attendance_Portal_Design_Credit_Report.pdf).
 
 ---
 
@@ -459,21 +459,6 @@ npx vercel --prod
 
 ---
 
-## Limitations and roadmap
-
-**Known limitations**
-
-- The portal verifies that the registered phone signed the challenge. The phone itself decides whose fingerprint or face unlocks it, so the system trusts the device's biometric enrolment.
-- GPS is an audit signal: off-campus scans are flagged on the instructor's map rather than rejected automatically.
-- The API layer doesn't have an automated test suite yet.
-
-**Roadmap**
-
-- [ ] Optional ultrasonic audio tokens for room-level verification indoors
-- [ ] Automated attendance export to the IIT Jodhpur ERP gradebook
-- [ ] Automated tests for the API routes and the QR validity window
-
----
 
 ## Documentation
 
