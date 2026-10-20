@@ -10,7 +10,7 @@
 
 <p>
   <a href="https://attendance-iitj.vercel.app"><img alt="Live app" src="https://img.shields.io/badge/Live_App-Open-2563eb?style=for-the-badge&logo=vercel&logoColor=white"></a>
-  <a href="docs/IITJ_Attendance_Portal_Design_Credit_Report%20%281%29.pdf"><img alt="Design report" src="https://img.shields.io/badge/Design_Report-PDF_(13_pages)-dc2626?style=for-the-badge&logo=adobeacrobatreader&logoColor=white"></a>
+  <a href="docs/IITJ_Attendance_Portal_Design_Credit_Report.pdf"><img alt="Design report" src="https://img.shields.io/badge/Design_Report-PDF_(13_pages)-dc2626?style=for-the-badge&logo=adobeacrobatreader&logoColor=white"></a>
 </p>
 
 <p>
@@ -32,11 +32,10 @@
   <a href="#team">Team</a>
 </p>
 
-  <img src="docs/01-four-layer-verification.png" alt="Four sequential verification gates: identity, rotating QR, hardware passkey and GPS, each blocking a different proxy attempt" width="100%">
 </div>
 
 > [!NOTE]
-> **Visiting from campus placements?** Sign-in is restricted to `@iitj.ac.in` Google accounts, so the live app can only be opened by IIT Jodhpur students and staff. Everything it does is shown in the [screenshots](#screenshots) below and in the [13-page design report](docs/IITJ_Attendance_Portal_Design_Credit_Report%20%281%29.pdf).
+> **Visiting from campus placements?** Sign-in is restricted to `@iitj.ac.in` Google accounts, so the live app can only be opened by IIT Jodhpur students and staff. Everything it does is shown in the [screenshots](#screenshots) below and in the [13-page design report](docs/IITJ_Attendance_Portal_Design_Credit_Report.pdf).
 
 ---
 
@@ -146,7 +145,6 @@ Every common way of faking attendance is blocked by a dedicated layer.
   </tr>
 </table>
 
-
 ### Instructor console (desktop)
 
 <table>
@@ -155,7 +153,8 @@ Every common way of faking attendance is blocked by a dedicated layer.
     <td width="50%" valign="top"><img src="docs/instructor-class-overview.png" alt="Class overview with average attendance and students below 75 percent"><br><sub><b>Class overview</b><br>Average attendance, students below 75% and each student's device status</sub></td>
   </tr>
   <tr>
-    <td width="100%" colspan="2" valign="top"><img src="docs/instructor-attendance-sheet.png" alt="Lecture matrix with manual override"><br><sub><b>Attendance sheet</b><br>Student-by-lecture matrix where one click toggles present or absent</sub></td>
+    <td width="50%" valign="top"><img src="docs/instructor-attendance-sheet.png" alt="Lecture matrix with manual override"><br><sub><b>Attendance sheet</b><br>Student-by-lecture matrix where one click toggles present or absent</sub></td>
+    <td width="50%" valign="top"><img src="docs/instructor-location-map.png" alt="GPS verification map of the IIT Jodhpur campus"><br><sub><b>Location map</b><br>Every check-in plotted on the IIT Jodhpur campus, with off-campus scans highlighted</sub></td>
   </tr>
   <tr>
     <td width="50%" valign="top"><img src="docs/instructor-manage-courses.png" alt="Course management and teaching assistant assignment"><br><sub><b>Manage courses</b><br>Create courses and assign teaching assistants</sub></td>
@@ -251,7 +250,7 @@ payload = `${session_id}:${bucket}:${mac}`;
 - The scanned course is checked against the selected course, so students are warned if they pick the wrong one.
 
 <div align="center">
-  <img src="docs/02-system-architecture.png" alt="Three-tier architecture: client browsers, Vercel serverless API and Supabase backend" width="100%">
+  <img src="docs/03-qr-rotation-and-grace-window.png" alt="Timeline of the 4 second QR bucket with a 2.5 second grace window, and latency of an in-class scan against a relayed photo" width="100%">
 </div>
 
 | Constant | Value | Purpose |
@@ -478,7 +477,7 @@ npx vercel --prod
 
 ## Documentation
 
-The full **[Design Credit Project Report](docs/IITJ_Attendance_Portal_Design_Credit_Report%20%281%29.pdf)** (13 pages) covers the proxy-attendance problem, the system architecture, the QR and passkey protocols, the GPS geofence, the database schema, a complete API reference and the conclusions. Its figures are in [`docs/`](docs/).
+The full **[Design Credit Project Report](docs/IITJ_Attendance_Portal_Design_Credit_Report.pdf)** (13 pages) covers the proxy-attendance problem, the system architecture, the QR and passkey protocols, the GPS geofence, the database schema, a complete API reference and the conclusions. Its figures are in [`docs/`](docs/).
 
 ---
 
