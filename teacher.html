@@ -6,12 +6,21 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#090d14">
   <title>Attendance — Instructor Console</title>
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
   <style>
+    #all-sessions-map,
+    .leaflet-container {
+      background: #0f1520 !important;
+      outline: none;
+    }
+    .leaflet-tile {
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
     .osm-dark { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92); }
   </style>
 </head>
@@ -335,7 +344,7 @@
     </div><!-- /teacher-main -->
   </div><!-- /teacher-shell -->
 
-  <script src="shared.js?v=11"></script>
-  <script src="teacher.js?v=11"></script>
+  <script src="shared.js?v=12"></script>
+  <script src="teacher.js?v=12"></script>
 </body>
 </html>

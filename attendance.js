@@ -71,7 +71,14 @@ document.getElementById('btn-google-login').onclick = async () => {
   if (error) document.getElementById('auth-status').textContent = error.message;
 };
 
-document.getElementById('btn-logout').onclick = () => supabaseClient.auth.signOut();
+document.getElementById('btn-logout').onclick = async () => {
+  try { await supabaseClient.auth.signOut(); } catch (e) {}
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch (e) {}
+  location.reload();
+};
 
 async function bootDashboard() {
   try {

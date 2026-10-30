@@ -48,7 +48,14 @@ document.getElementById('btn-google-login').onclick = async () => {
   const { error } = await googleSignIn();
   if (error) document.getElementById('auth-status').textContent = error.message;
 };
-document.getElementById('btn-logout').onclick = () => supabaseClient.auth.signOut();
+document.getElementById('btn-logout').onclick = async () => {
+  try { await supabaseClient.auth.signOut(); } catch (e) {}
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch (e) {}
+  location.reload();
+};
 
 async function bootConsole() {
   try {
@@ -109,8 +116,15 @@ function switchView(name) {
   document.getElementById('course-select').style.visibility = (name === 'courses' || name === 'students') ? 'hidden' : 'visible';
   if (name === 'live') renderLiveView();
   if (name === 'map') {
-    loadLocationMap(true);
-    setTimeout(() => locMap && locMap.invalidateSize(), 150);
+    if (locData && locCourseId === selectedCourseId) {
+      showLocationMap(false);
+      loadLocationMap(true, true);
+    } else {
+      loadLocationMap(true, false);
+    }
+    setTimeout(() => {
+      if (locMap) locMap.invalidateSize({ animate: false });
+    }, 120);
   }
 }
 
@@ -680,7 +694,7 @@ async function refreshLiveRoster() {
     }
 
     if (document.getElementById('tview-map').classList.contains('is-active')) {
-      loadLocationMap(true);
+      loadLocationMap(true, true);
     }
   } catch (err) { console.error('roster fetch failed:', err); }
 }
@@ -719,13 +733,14 @@ function initLocMap() {
   const el = document.getElementById('all-sessions-map');
   if (locMap || !el) return;
   locMap = L.map('all-sessions-map', {
-    center: CAMPUS_CENTER, zoom: 16, minZoom: 14, maxZoom: 19,
+    center: CAMPUS_CENTER, zoom: 16, minZoom: 13, maxZoom: 19,
     scrollWheelZoom: true, dragging: true, touchZoom: true,
     doubleClickZoom: true, boxZoom: true, preferCanvas: true
   });
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, className: 'osm-dark', referrerPolicy: 'origin',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
   }).addTo(locMap);
 }
 
@@ -735,31 +750,44 @@ function setLocEmpty(msg) {
   document.getElementById('map-content').classList.add('hidden');
 }
 
-async function loadLocationMap(force) {
-  if (!selectedCourseId) { setLocEmpty('Select or create a course first.'); return; }
-  if (!force && locData && locCourseId === selectedCourseId) { showLocationMap(); return; }
+async function loadLocationMap(force = false, isSilent = false) {
+  if (!selectedCourseId) {
+    if (!isSilent) setLocEmpty('Select or create a course first.');
+    return;
+  }
+  if (!force && locData && locCourseId === selectedCourseId) {
+    showLocationMap(false);
+    return;
+  }
 
   const seq = ++locSeq;
-  setLocEmpty('Loading GPS verification data…');
+  if (!isSilent && (!locData || locCourseId !== selectedCourseId)) {
+    setLocEmpty('Loading GPS verification data…');
+  }
+
   let data;
   try {
     data = await authedFetch(`/api/course-locations?course_id=${encodeURIComponent(selectedCourseId)}`);
   } catch (err) {
-    if (seq === locSeq) setLocEmpty(err.message);
+    if (seq === locSeq && !isSilent) setLocEmpty(err.message);
     return;
   }
   if (seq !== locSeq) return;
+
   locData = data;
   locCourseId = selectedCourseId;
-  showLocationMap(true);
+  showLocationMap(isSilent);
 }
 
-function showLocationMap() {
+function showLocationMap(isSilent = false) {
   if (!locData || !locData.sessions || !locData.sessions.length) {
     setLocEmpty('No lectures found for this course yet.');
     return;
   }
-  if (typeof L === 'undefined') { setLocEmpty('Map library failed to load. Reload the page.'); return; }
+  if (typeof L === 'undefined') {
+    setLocEmpty('Map library failed to load. Reload the page.');
+    return;
+  }
 
   document.getElementById('map-empty').classList.add('hidden');
   document.getElementById('map-content').classList.remove('hidden');
@@ -767,24 +795,36 @@ function showLocationMap() {
   if (!locMap) return;
 
   buildSessionSelect();
-  drawSelectedSession();
-  setTimeout(() => locMap && locMap.invalidateSize(), 200);
+  // Recenter only on explicit user actions, never on background polling
+  drawSelectedSession(!isSilent);
+
+  if (!isSilent) {
+    setTimeout(() => {
+      if (locMap) locMap.invalidateSize({ animate: false });
+    }, 120);
+  }
 }
 
 function buildSessionSelect() {
   const sel = document.getElementById('map-session-select');
   if (!sel || !locData || !locData.sessions) return;
+
   const prevVal = sel.value;
   const reversed = locData.sessions.slice().reverse();
-  sel.innerHTML = reversed.map((s, ri) => {
+  const newHtml = reversed.map((s, ri) => {
     const i = locData.sessions.length - 1 - ri;
     const label = `${formatDate(s.date)}${s.is_live ? ' (Live)' : ''}`;
     return `<option value="${i}">${label}</option>`;
   }).join('');
-  if (prevVal !== '' && !isNaN(parseInt(prevVal, 10)) && parseInt(prevVal, 10) < locData.sessions.length) {
-    sel.value = prevVal;
+
+  if (sel.innerHTML !== newHtml) {
+    sel.innerHTML = newHtml;
+    if (prevVal !== '' && !isNaN(parseInt(prevVal, 10)) && parseInt(prevVal, 10) < locData.sessions.length) {
+      sel.value = prevVal;
+    }
   }
-  sel.onchange = () => drawSelectedSession();
+
+  sel.onchange = () => drawSelectedSession(true);
 }
 
 function getDistanceFromCampus(lat, lng) {
@@ -797,13 +837,13 @@ function getDistanceFromCampus(lat, lng) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function drawSelectedSession() {
+function drawSelectedSession(recenter = true) {
   locMarkers.forEach(m => m.remove());
   locMarkers = [];
 
   const sel = document.getElementById('map-session-select');
   const sessionIdx = parseInt(sel.value, 10);
-  if (isNaN(sessionIdx)) return;
+  if (isNaN(sessionIdx) || !locData || !locData.sessions || !locData.sessions[sessionIdx]) return;
 
   const sess = locData.sessions[sessionIdx];
   let withGps = 0;
@@ -836,11 +876,24 @@ function drawSelectedSession() {
   document.getElementById('map-summary').textContent =
     `${totalScans} check-ins · ${withGps} with GPS${offNote} · ${formatDate(sess.date)}`;
 
-  if (locMarkers.length > 0) {
-    const group = L.featureGroup(locMarkers);
-    locMap.fitBounds(group.getBounds().pad(0.3));
-  } else if (locMap) {
-    locMap.setView(CAMPUS_CENTER, 16);
+  if (recenter && locMap) {
+    if (locMarkers.length === 0) {
+      locMap.setView(CAMPUS_CENTER, 16, { animate: false });
+    } else if (locMarkers.length === 1) {
+      locMap.setView(locMarkers[0].getLatLng(), 16, { animate: false });
+    } else {
+      const group = L.featureGroup(locMarkers);
+      const bounds = group.getBounds();
+      if (bounds.isValid()) {
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        if (ne.lat === sw.lat && ne.lng === sw.lng) {
+          locMap.setView(ne, 16, { animate: false });
+        } else {
+          locMap.fitBounds(bounds.pad(0.2), { maxZoom: 17, animate: false });
+        }
+      }
+    }
   }
 }
 
@@ -861,7 +914,7 @@ function exportLocationCsv() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-document.getElementById('btn-map-refresh').onclick = () => loadLocationMap(true);
+document.getElementById('btn-map-refresh').onclick = () => loadLocationMap(true, false);
 document.getElementById('btn-map-export').onclick = exportLocationCsv;
 
 init();
