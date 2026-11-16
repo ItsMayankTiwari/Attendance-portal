@@ -513,6 +513,9 @@ async function startAttendance(courseId, courseName) {
   document.getElementById('scan-hint').classList.remove('hidden');
   document.getElementById('scan-success-state').classList.add('hidden');
   document.getElementById('scan-fail-state').classList.add('hidden');
+  const iosTriggerBtn = document.getElementById('ios-biometric-trigger-btn');
+  iosTriggerBtn.classList.add('hidden');
+  iosTriggerBtn.onclick = null;
   show('screen-scan');
 
   if (navigator.permissions && navigator.permissions.query) {
@@ -534,12 +537,22 @@ async function startAttendance(courseId, courseName) {
   scanPhase = 'scanning';
   beginAttemptCountdown();
 
-  html5QrCode = new Html5Qrcode('reader');
+  const qrFormats = typeof Html5QrcodeSupportedFormats !== 'undefined'
+    ? [Html5QrcodeSupportedFormats.QR_CODE]
+    : undefined;
+  html5QrCode = new Html5Qrcode('reader', qrFormats ? { formatsToSupport: qrFormats } : undefined);
   html5QrCode.start(
     { facingMode: 'environment' },
     {
       fps: 12,
-      qrbox: (w, h) => { const e = Math.floor(Math.min(w, h) * 0.78); return { width: e, height: e }; }
+      qrbox: (w, h) => { const e = Math.floor(Math.min(w, h) * 0.78); return { width: e, height: e }; },
+      aspectRatio: 1.0,
+      videoConstraints: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        focusMode: 'continuous'
+      }
     },
     async (decodedText) => {
       if (scanPhase !== 'scanning') return;
@@ -547,23 +560,28 @@ async function startAttendance(courseId, courseName) {
       safeStopScanner();
       document.getElementById('scan-camera-state').classList.add('hidden');
       document.getElementById('scan-hint').classList.add('hidden');
-      document.getElementById('scan-verify-state').classList.remove('hidden');
+      const verifyState = document.getElementById('scan-verify-state');
+      const verifySpinner = document.getElementById('scan-verify-spinner');
+      const verifyTitle = document.getElementById('scan-verify-title');
+      const verifySubtitle = document.getElementById('scan-verify-subtitle');
+      verifyState.classList.remove('hidden');
+      verifySpinner.classList.remove('hidden');
+      verifyTitle.textContent = 'QR Code Captured';
+      verifySubtitle.textContent = 'Preparing biometric verification...';
 
       const gpsPromise = getLocationAsync().then(
         (location) => ({ location }),
         (error) => ({ error })
       );
 
-      try {
-        const options = await authedFetch('/api/attendance-options', {
-          method: 'POST',
-          body: JSON.stringify({ qr_payload: decodedText, expected_course_id: cleanCourseId })
-        });
-        if (scanPhase !== 'verifying') return;
-        const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
-        if (scanPhase !== 'verifying') return;
+      const completeAttendanceCheckIn = async (assertion) => {
+        verifySpinner.classList.remove('hidden');
+        iosTriggerBtn.classList.add('hidden');
+        verifyTitle.textContent = 'Confirming Location & Saving...';
+        verifySubtitle.textContent = 'Checking classroom coordinates';
 
         const gpsResult = await gpsPromise;
+        if (scanPhase !== 'verifying') return;
         if (gpsResult.error) throw gpsResult.error;
         const { latitude, longitude } = gpsResult.location;
 
@@ -577,10 +595,12 @@ async function startAttendance(courseId, courseName) {
             expected_course_id: cleanCourseId
           })
         });
+        if (scanPhase !== 'verifying') return;
+
         scanPhase = 'done';
         clearScanCountdown();
         document.getElementById('scan-time-wrap').classList.add('hidden');
-        document.getElementById('scan-verify-state').classList.add('hidden');
+        verifyState.classList.add('hidden');
         document.getElementById('scan-fail-state').classList.add('hidden');
         document.getElementById('scan-success-state').classList.remove('hidden');
         await loadRecords();
@@ -590,8 +610,67 @@ async function startAttendance(courseId, courseName) {
         setTimeout(() => {
           if (scanPhase === 'done') closeScan();
         }, 1600);
+      };
+
+      const promptWithTapButton = () => {
+        verifySpinner.classList.add('hidden');
+        verifyTitle.textContent = 'QR Scanned — Verify Identity';
+        verifySubtitle.textContent = 'Tap below to confirm with Face ID or Touch ID';
+        iosTriggerBtn.classList.remove('hidden');
+        iosTriggerBtn.onclick = async () => {
+          iosTriggerBtn.disabled = true;
+          iosTriggerBtn.classList.add('hidden');
+          verifySpinner.classList.remove('hidden');
+          try {
+            const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
+            if (scanPhase !== 'verifying') return;
+            await completeAttendanceCheckIn(assertion);
+          } catch (tapErr) {
+            if (scanPhase !== 'verifying') return;
+            scanPhase = 'done';
+            clearScanCountdown();
+            const isLocationError = !!(tapErr && (tapErr.isLocationError || /location|gps/i.test(tapErr.message)));
+            showScanFail(tapErr.message || 'Biometric verification failed.', {
+              isLocationError,
+              geoCode: tapErr && tapErr.geoCode || 1
+            });
+          } finally {
+            iosTriggerBtn.disabled = false;
+            iosTriggerBtn.onclick = null;
+          }
+        };
+      };
+
+      let options;
+      try {
+        options = await authedFetch('/api/attendance-options', {
+          method: 'POST',
+          body: JSON.stringify({ qr_payload: decodedText, expected_course_id: cleanCourseId })
+        });
+        if (scanPhase !== 'verifying') return;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+          promptWithTapButton();
+          return;
+        }
+
+        verifyTitle.textContent = 'Verifying Passkey & GPS';
+        verifySubtitle.textContent = 'Confirm your biometric prompt to complete check-in';
+        try {
+          const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
+          if (scanPhase !== 'verifying') return;
+          await completeAttendanceCheckIn(assertion);
+        } catch (authErr) {
+          if (scanPhase !== 'verifying') return;
+          if (authErr && authErr.name === 'NotAllowedError') {
+            promptWithTapButton();
+            return;
+          }
+          throw authErr;
+        }
       } catch (err) {
-        if (scanPhase === 'done') return;
+        if (scanPhase !== 'verifying') return;
         scanPhase = 'done';
         clearScanCountdown();
         const isLocationError = !!(err && (err.isLocationError || /location|gps/i.test(err.message)));
