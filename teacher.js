@@ -733,14 +733,14 @@ function initLocMap() {
   const el = document.getElementById('all-sessions-map');
   if (locMap || !el) return;
   locMap = L.map('all-sessions-map', {
-    center: CAMPUS_CENTER, zoom: 16, minZoom: 13, maxZoom: 19,
+    center: CAMPUS_CENTER, zoom: 16, minZoom: 14, maxZoom: 19,
     scrollWheelZoom: true, dragging: true, touchZoom: true,
     doubleClickZoom: true, boxZoom: true, preferCanvas: true
   });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(locMap);
 }
 

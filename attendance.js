@@ -373,7 +373,7 @@ function getDeviceLocationSteps(errorCode) {
         steps: [
           'Swipe down from the top of your screen to open <strong>Quick Settings</strong>.',
           'Tap the <strong>Location / GPS</strong> tile to turn it <strong>ON</strong>.',
-          'Return here and tap <strong>Test Location &amp; Re-prompt</strong> below.'
+          'Return here and tap <strong>Check Location (Optional)</strong> below. You can still check in without it.'
         ]
       };
     }
@@ -404,7 +404,7 @@ function getDeviceLocationSteps(errorCode) {
     steps: [
       'Click the <strong>Site Settings / Lock icon</strong> on the left side of your browser address bar.',
       'Toggle <strong>Location</strong> to <strong>Allow</strong>.',
-      'Click <strong>Test Location &amp; Re-prompt</strong> below.'
+      'Click <strong>Check Location (Optional)</strong> below. You can still check in without it.'
     ]
   };
 }
@@ -473,26 +473,30 @@ function onAttemptTimeout() {
   showScanFail('30-second window expired. Tap Try Again to rescan.');
 }
 
-function getLocationAsync() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      const err = new Error('Geolocation is not supported by this browser.');
-      err.isLocationError = true;
-      return reject(err);
+async function getOptionalLocationAsync() {
+  if (!navigator.geolocation) return { latitude: null, longitude: null };
+
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      if (status.state === 'denied') {
+        return { latitude: null, longitude: null };
+      }
     }
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
-      (e) => {
-        const isDenied = e && e.code === 1;
-        const err = new Error(isDenied
-          ? 'Location permission is blocked. Follow the steps below to allow Location access.'
-          : 'Could not acquire GPS signal. Make sure Location Services / GPS are turned ON.');
-        err.isLocationError = true;
-        err.geoCode = e ? e.code : 1;
-        reject(err);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
+  } catch (_) {
+    // Safari/iOS may not support permissions.query for geolocation.
+  }
+
+  return new Promise((resolve) => {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
+        () => resolve({ latitude: null, longitude: null }),
+        { enableHighAccuracy: false, timeout: 3000, maximumAge: 300000 }
+      );
+    } catch (_) {
+      resolve({ latitude: null, longitude: null });
+    }
   });
 }
 
@@ -518,24 +522,9 @@ async function startAttendance(courseId, courseName) {
   iosTriggerBtn.onclick = null;
   show('screen-scan');
 
-  if (navigator.permissions && navigator.permissions.query) {
-    try {
-      const permission = await navigator.permissions.query({ name: 'geolocation' });
-      if (permission.state === 'denied') {
-        scanPhase = 'done';
-        showScanFail('Location access is blocked for this website. Allow Location below before scanning.', {
-          isLocationError: true,
-          geoCode: 1
-        });
-        return;
-      }
-    } catch (e) {
-      // Continue with the normal geolocation request if permission state cannot be queried.
-    }
-  }
-
   scanPhase = 'scanning';
   beginAttemptCountdown();
+  const gpsPromise = getOptionalLocationAsync();
 
   const qrFormats = typeof Html5QrcodeSupportedFormats !== 'undefined'
     ? [Html5QrcodeSupportedFormats.QR_CODE]
@@ -569,21 +558,17 @@ async function startAttendance(courseId, courseName) {
       verifyTitle.textContent = 'QR Code Captured';
       verifySubtitle.textContent = 'Preparing biometric verification...';
 
-      const gpsPromise = getLocationAsync().then(
-        (location) => ({ location }),
-        (error) => ({ error })
-      );
-
       const completeAttendanceCheckIn = async (assertion) => {
         verifySpinner.classList.remove('hidden');
         iosTriggerBtn.classList.add('hidden');
-        verifyTitle.textContent = 'Confirming Location & Saving...';
-        verifySubtitle.textContent = 'Checking classroom coordinates';
+        verifyTitle.textContent = 'Saving Attendance...';
+        verifySubtitle.textContent = 'Completing your check-in';
 
-        const gpsResult = await gpsPromise;
+        const { latitude, longitude } = await Promise.race([
+          gpsPromise,
+          new Promise((resolve) => setTimeout(() => resolve({ latitude: null, longitude: null }), 500))
+        ]);
         if (scanPhase !== 'verifying') return;
-        if (gpsResult.error) throw gpsResult.error;
-        const { latitude, longitude } = gpsResult.location;
 
         await authedFetch('/api/mark-attendance', {
           method: 'POST',
@@ -655,7 +640,7 @@ async function startAttendance(courseId, courseName) {
           return;
         }
 
-        verifyTitle.textContent = 'Verifying Passkey & GPS';
+        verifyTitle.textContent = 'Verifying Passkey';
         verifySubtitle.textContent = 'Confirm your biometric prompt to complete check-in';
         try {
           const assertion = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
@@ -706,14 +691,16 @@ document.getElementById('btn-recheck-location').onclick = async () => {
   btn.disabled = true;
   btn.textContent = 'Checking GPS…';
   try {
-    await getLocationAsync();
-    toast('Location verified! Opening scanner…', 'success');
+    const location = await getOptionalLocationAsync();
+    if (location.latitude === null) {
+      toast('Location unavailable. You can still check in.');
+    } else {
+      toast('Location available. Opening scanner…', 'success');
+    }
     await restartScannerAfterLocationGrant();
-  } catch (err) {
-    showScanFail(err.message, { isLocationError: true, geoCode: err && err.geoCode || 1 });
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Test Location & Re-prompt';
+    btn.textContent = 'Check Location (Optional)';
   }
 };
 
